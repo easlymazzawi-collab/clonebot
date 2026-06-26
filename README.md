@@ -1,64 +1,91 @@
-# TG Forum Clone — Control Panel
+# TG Forum Clone
 
-Giao diện quản lý hệ thống clone Telegram Forum, gồm 3 thành phần phối hợp: **Userbot**, **Bot** và **Forum**.
+Hệ thống clone Telegram Forum gồm **Userbot** (clone nội dung), **Bot** (trả media ẩn nguồn) và **Dashboard HTML** kết nối API.
 
-## Tính năng
+## Kiến trúc
 
-### Userbot (Telethon)
-- Clone toàn bộ topics + messages từ forum nguồn sang forum đích
-- Video → chỉ lấy thumbnail, không clone file nặng
-- Album giữ nguyên nhóm (1 API call / album)
-- Ẩn nguồn với `drop_author=True`
-- Resume qua state file sau khi ngắt kết nối
-- Batch 50 msg/call, flood wait tự retry
-
-### Bot (python-telegram-bot)
-- Lưu `file_id` gốc từ forum nguồn vào SQLite
-- Tạo token `alb_XXXXX` cho từng album/media
-- Khi user bấm link bot → trả album gốc, ẩn nguồn
-- Giữ nguyên album (không tách lẻ)
-- Giữ caption gốc khi trả media
-
-### Caption Editor
-- Thêm link bot vào cuối mỗi bài cloned
-- Template: `{caption_goc} — Nhấp vào link này để xem: {bot_link}`
-- Streaming edit, resume được, giữ premium emoji entities
-
-## Giao diện HTML
-
-Mở `index.html` bằng trình duyệt — không cần server.
-
-### Các trang
-| Trang | Mô tả |
-|-------|-------|
-| Dashboard | Tổng quan thống kê, pipeline, log thời gian thực |
-| Workflow | Sơ đồ kiến trúc và từng bước hoạt động |
-| Userbot | Cấu hình API ID/Hash, session, tùy chỉnh |
-| Bot | Token, caption template, thống kê lượt xem |
-| Forum | Quản lý kênh nguồn/đích, topic map |
-| Clone Topics | Chạy/dừng tiến trình, theo dõi tiến độ |
-| Caption Editor | Edit caption hàng loạt theo topic |
-| Media Manager | Database albums, file_id map, thumbnail preview |
-| Logs | Log toàn bộ hoạt động, bộ lọc |
-| Cài đặt | Database, hiệu năng, bảo mật |
-
-## Cài đặt Python
-
-```bash
-pip install telethon python-telegram-bot aiohttp cryptg aiosqlite
+```
+Forum Nguồn
+    ↓ Userbot (Telethon)
+Forum Đích — thumbnail video, album giữ nguyên, ẩn nguồn
+    ↓ Bot harvest file_id
+SQLite DB (token → file_ids)
+    ↓ Caption Editor
+"{caption gốc} — Nhấp vào link này để xem: t.me/Bot?start=alb_xxx"
+    ↓ User bấm link
+Bot trả album gốc, ẩn tên nguồn
 ```
 
-## Cấu trúc dự án (sẽ phát triển)
+## Cài đặt
+
+```bash
+pip install -r requirements.txt
+cp config/settings.example.json config/settings.json
+# Sửa config/settings.json — điền API_ID, API_HASH, phone, bot token
+```
+
+Hoặc dùng biến môi trường:
+
+```bash
+export TG_API_ID=12345678
+export TG_API_HASH=your_hash
+export TG_PHONE="+84..."
+export BOT_TOKEN=123456:ABC...
+```
+
+## Chạy
+
+```bash
+python run.py
+```
+
+Mở trình duyệt: **http://localhost:8080**
+
+## Cấu trúc thư mục
 
 ```
 clonebot/
-├── index.html              # Giao diện quản lý
+├── run.py                  # Khởi động server
+├── index.html              # Dashboard UI
+├── backend/main.py         # FastAPI REST API
 ├── userbot/
-│   ├── clone_forum.py      # Backup forum (Phase 1 + 2)
-│   └── caption_editor.py   # Caption editor v3.1
+│   ├── clone_forum.py      # Clone forum (Phase 1 + 2)
+│   ├── caption_editor.py   # Edit caption hàng loạt
+│   ├── media_scanner.py    # Harvest file_id qua bot
+│   └── telegram_client.py  # Telethon session
 ├── bot/
-│   ├── bot_main.py         # Bot handler
-│   └── media_db.py         # SQLite database
-└── config/
-    └── settings.json       # Cấu hình chung
+│   ├── bot_main.py         # Bot trả media
+│   └── media_db.py         # SQLite album map
+├── shared/                 # Config, logger, progress
+└── config/settings.json    # Cấu hình (tạo từ example)
 ```
+
+## API chính
+
+| Endpoint | Mô tả |
+|----------|-------|
+| `GET /api/status` | Trạng thái userbot, bot, clone |
+| `GET /api/stats` | Thống kê tổng hợp |
+| `POST /api/userbot/connect` | Kết nối Telethon |
+| `POST /api/bot/start` | Khởi động bot polling |
+| `POST /api/clone/start` | Bắt đầu clone forum |
+| `POST /api/clone/stop` | Dừng clone |
+| `POST /api/caption/start` | Edit caption theo topic |
+| `POST /api/media/scan` | Scan + harvest file_id |
+| `GET /api/media/albums` | Danh sách albums |
+| `POST /api/config` | Lưu cấu hình |
+
+## Quy trình sử dụng
+
+1. **Cấu hình** — Tab Userbot + Bot: điền API credentials và bot token → Lưu
+2. **Kết nối** — Nút "Kiểm tra" trên Userbot và Bot
+3. **Clone** — Tab Clone Topics: nhập forum nguồn/đích → Chạy Clone
+4. **Scan media** — Tab Media Manager: harvest file_id từ forum gốc
+5. **Caption** — Tab Caption Editor: nhập link bắt đầu + template → Bắt đầu Edit
+
+## Lưu ý
+
+- Lần đầu chạy Userbot cần xác thực OTP Telegram (chạy `python run.py` trong terminal có tương tác)
+- Bot phải được userbot **/start** trước khi harvest file_id
+- Video khi clone chỉ gửi **thumbnail** nếu bật `video_thumbnail_only`
+- Progress clone/caption lưu tự động — có thể resume sau khi dừng

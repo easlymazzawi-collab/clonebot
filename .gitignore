@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Secrets & sessions
+config/settings.json
+*.session
+*.session-journal
+
+# Runtime data
+data/*.sqlite
+data/*.sqlite-journal
+data/*.log
+state_*.txt
+topicmap_*.txt
+session_meta_*.json
+.tg_caption_progress/
+
+# IDE
+.idea/
+.vscode/
+*.swp

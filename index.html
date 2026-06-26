@@ -2203,60 +2203,155 @@ Vui lòng chờ trong giây lát.</textarea>
       .replace('{bot_link}', 't.me/YourShareBot?start=alb_a1b2c3');
   }
 
-  // ── SIMULATE ACTIONS ──
-  function refreshStats() {
-    const els = ['stat-msgs','stat-topics','stat-media','stat-reqs'];
-    els.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.style.opacity = '0.4';
-      setTimeout(() => { el.style.opacity = '1'; }, 500);
+  // ── API ───────────────────────────────────────────────────────
+  const API = '';
+
+  async function api(path, opts = {}) {
+    const res = await fetch(API + path, {
+      headers: { 'Content-Type': 'application/json', ...opts.headers },
+      ...opts,
     });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    return data;
   }
 
-  function clearLog() { /* stub */ }
-
-  function testConnection(which) {
-    alert(`🔌 Đang kiểm tra kết nối ${which === 'bot' ? 'Bot' : 'Userbot'}...\n\n✅ Kết nối thành công!`);
+  function renderLogs(logs, boxId) {
+    const box = document.getElementById(boxId);
+    if (!box || !logs) return;
+    const cls = { ok: 'log-line-ok', warn: 'log-line-warn', err: 'log-line-err', info: 'log-line-info', skip: 'log-line-skip' };
+    box.innerHTML = logs.map(e =>
+      `<span class="${cls[e.level] || ''}"><span class="log-ts">[${e.ts.split(' ')[1] || e.ts}]</span>[${e.source}] ${e.message}</span>`
+    ).join('\n');
+    box.scrollTop = box.scrollHeight;
   }
 
-  function saveConfig(which) {
-    alert(`💾 Đã lưu cấu hình ${which === 'bot' ? 'Bot' : 'Userbot'}!`);
+  async function pollDashboard() {
+    try {
+      const [stats, status, logs] = await Promise.all([
+        api('/api/stats'),
+        api('/api/status'),
+        api('/api/logs?limit=50'),
+      ]);
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = Number(v || 0).toLocaleString(); };
+      set('stat-msgs', stats.msgs_cloned);
+      set('stat-topics', stats.topics_done);
+      set('stat-media', stats.media_files);
+      set('stat-reqs', stats.bot_views);
+      renderLogs(logs.logs, 'live-log');
+
+      const cp = status.clone || {};
+      const progTopics = document.getElementById('prog-topics');
+      const progMsgs = document.getElementById('prog-msgs');
+      if (progTopics && cp.topics_total) {
+        progTopics.style.width = Math.round((cp.topics_done / cp.topics_total) * 100) + '%';
+      }
+      if (progMsgs) {
+        const pct = cp.current_topic_total ? Math.round((cp.current_topic_msgs / cp.current_topic_total) * 100) : (cp.running ? 50 : 0);
+        progMsgs.style.width = pct + '%';
+      }
+      const ok = document.getElementById('prog-ok');
+      if (ok) ok.textContent = (cp.msgs_ok || 0).toLocaleString();
+    } catch (_) { /* server chưa chạy */ }
   }
 
-  function saveAllSettings() {
-    alert('💾 Đã lưu tất cả cài đặt!');
+  async function refreshStats() { await pollDashboard(); }
+
+  async function clearLog() {
+    try { await api('/api/logs', { method: 'DELETE' }); pollDashboard(); } catch (e) { alert(e.message); }
+  }
+
+  async function testConnection(which) {
+    try {
+      if (which === 'bot') {
+        await api('/api/bot/start', { method: 'POST' });
+        alert('✅ Bot đã khởi động!');
+      } else {
+        const r = await api('/api/userbot/connect', { method: 'POST' });
+        alert(`✅ Userbot: @${r.user?.username || r.user?.first_name}`);
+      }
+    } catch (e) { alert('❌ ' + e.message); }
+  }
+
+  async function saveConfig(which) {
+    try {
+      const body = {};
+      if (which === 'userbot') {
+        body.telegram = {
+          api_id: parseInt(document.querySelector('#page-userbot input[placeholder="28030819"]')?.value || 0),
+          api_hash: document.getElementById('api-hash')?.value || '',
+          phone: document.querySelector('#page-userbot input[placeholder*="+84"]')?.value || '',
+          session_name: document.querySelector('#page-userbot input[placeholder="my_session"]')?.value || 'session_v24',
+        };
+        body.clone = { hide_sender: true, batch_size: 50 };
+      } else {
+        body.bot = {
+          token: document.getElementById('bot-token')?.value || '',
+          username: document.querySelector('#page-bot input[placeholder*="@YourShareBot"]')?.value?.replace('@','') || '',
+          caption_template: document.getElementById('caption-template')?.value || '',
+        };
+      }
+      await api('/api/config', { method: 'POST', body: JSON.stringify(body) });
+      alert('💾 Đã lưu!');
+    } catch (e) { alert('❌ ' + e.message); }
+  }
+
+  async function saveAllSettings() {
+    alert('💾 Cấu hình đã lưu qua từng tab Userbot/Bot.');
   }
 
   function preloadTopics() {
-    alert('🔄 Đang preload topics từ Forum Nguồn...\n\nSrc: 53 topics ✅\nDst: 43 topics ✅');
+    alert('🔄 Preload topics — chạy khi bắt đầu clone (Phase 1).');
   }
 
-  function startClone() {
-    const btn = event.target;
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang chạy...';
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = '▶️ Chạy Clone';
-    }, 3000);
-    appendLog('clone-log', 'info', '▶️ Người dùng yêu cầu bắt đầu clone...');
-  }
-
-  function stopClone() {
-    if (confirm('⏹️ Dừng tiến trình clone?\n\nProgress đã lưu — có thể resume sau.')) {
-      appendLog('clone-log', 'warn', '⏹️ Người dùng dừng clone — progress đã lưu');
+  async function startClone() {
+    const btn = event?.target;
+    try {
+      const src = document.querySelector('#tab-clone-mode-backup input')?.value || '';
+      const dst = document.querySelectorAll('#tab-clone-mode-backup input')[1]?.value || '';
+      await api('/api/clone/start', {
+        method: 'POST',
+        body: JSON.stringify({ src_raw: src, dst_raw: dst, hide_sender: true, video_thumbnail_only: true }),
+      });
+      if (btn) { btn.textContent = '⏳ Đang chạy...'; btn.disabled = true; }
+      appendLog('clone-log', 'info', '▶️ Clone bắt đầu');
+    } catch (e) {
+      alert('❌ ' + e.message);
+      if (btn) btn.disabled = false;
     }
   }
 
-  function startCaptionEdit() {
-    const link = document.getElementById('cap-start-link').value.trim();
-    if (!link) { alert('⚠️ Vui lòng nhập link BẮT ĐẦU!'); return; }
-    appendLog('cap-log', 'info', `✏️ Bắt đầu edit caption từ: ${link}`);
+  async function stopClone() {
+    if (!confirm('⏹️ Dừng clone? Progress đã lưu.')) return;
+    try {
+      await api('/api/clone/stop', { method: 'POST' });
+      appendLog('clone-log', 'warn', '⏹️ Đã yêu cầu dừng');
+    } catch (e) { alert(e.message); }
   }
 
-  function scanMedia() {
-    alert('🔍 Đang scan media từ Forum Nguồn...\n\n📊 Kết quả:\n• 6,209 file IDs tìm thấy\n• 2,891 albums\n• 1,847 video thumbnails\n\n✅ Database đã cập nhật!');
+  async function startCaptionEdit() {
+    const link = document.getElementById('cap-start-link')?.value.trim();
+    if (!link) { alert('⚠️ Nhập link BẮT ĐẦU!'); return; }
+    const newText = document.getElementById('cap-new-text')?.value || '{caption_goc}\n\n— Nhấp vào link này để xem: {bot_link}';
+    try {
+      await api('/api/caption/start', {
+        method: 'POST',
+        body: JSON.stringify({ start_link: link, new_text: newText, embed_bot_link: true }),
+      });
+      appendLog('cap-log', 'info', `✏️ Edit từ: ${link}`);
+    } catch (e) { alert('❌ ' + e.message); }
+  }
+
+  async function scanMedia() {
+    const src = document.querySelector('#page-forum input')?.value || '';
+    if (!src) { alert('⚠️ Nhập forum nguồn trước!'); return; }
+    try {
+      await api('/api/media/scan', {
+        method: 'POST',
+        body: JSON.stringify({ src_raw: src, topic_id: 1, topic_name: 'General' }),
+      });
+      alert('🔍 Scan media đang chạy nền. Xem log để theo dõi.');
+    } catch (e) { alert('❌ ' + e.message); }
   }
 
   function appendLog(boxId, type, msg) {
@@ -2271,20 +2366,9 @@ Vui lòng chờ trong giây lát.</textarea>
     box.scrollTop = box.scrollHeight;
   }
 
-  // ── LIVE STATS SIMULATION ──
-  let tickerRunning = false;
-  function startLiveTicker() {
-    if (tickerRunning) return;
-    tickerRunning = true;
-    setInterval(() => {
-      const msgEl = document.getElementById('stat-msgs');
-      if (msgEl) {
-        const cur = parseInt(msgEl.textContent.replace(/,/g, ''));
-        msgEl.textContent = (cur + Math.floor(Math.random() * 3)).toLocaleString();
-      }
-    }, 4000);
-  }
-  startLiveTicker();
+  // Poll dashboard every 3s
+  pollDashboard();
+  setInterval(pollDashboard, 3000);
 </script>
 
 </body>
