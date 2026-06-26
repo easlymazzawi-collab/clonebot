@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TG Forum Clone — Control Panel</title>
+<style>
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #1c2230;
+    --border:    #21262d;
+    --border2:   #30363d;
+    --accent:    #2f81f7;
+    --accent2:   #388bfd;
+    --green:     #3fb950;
+    --yellow:    #d29922;
+    --red:       #f85149;
+    --purple:    #bc8cff;
+    --cyan:      #39c5cf;
+    --orange:    #f0883e;
+    --text:      #e6edf3;
+    --text2:     #8b949e;
+    --text3:     #6e7681;
+    --radius:    10px;
+    --radius2:   6px;
+    --shadow:    0 4px 24px rgba(0,0,0,.45);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ─── SCROLLBAR ─────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+  /* ─── LAYOUT ─────────────────────────────────── */
+  .app-wrap { display: flex; min-height: 100vh; }
+
+  /* ─── SIDEBAR ─────────────────────────────────── */
+  .sidebar {
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logo {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #2f81f7, #bc8cff);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .logo-text { font-weight: 700; font-size: 15px; color: var(--text); }
+  .logo-sub  { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+  .sidebar-section { padding: 16px 8px 4px; }
+  .sidebar-section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--text3);
+    padding: 0 8px; margin-bottom: 4px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius2);
+    cursor: pointer; transition: background .15s, color .15s;
+    color: var(--text2); font-size: 13px; font-weight: 500;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(47,129,247,.15); color: var(--accent2); }
+  .nav-item .ni-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-item .ni-badge {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    background: var(--accent); color: #fff;
+    border-radius: 99px; padding: 1px 7px;
+  }
+  .ni-badge.green { background: var(--green); }
+  .ni-badge.yellow { background: var(--yellow); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, #2f81f7, #bc8cff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .sidebar-user-info { flex: 1; overflow: hidden; }
+  .sidebar-user-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar-user-status { font-size: 10px; color: var(--green); }
+  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 4px; }
+
+  /* ─── MAIN ─────────────────────────────────── */
+  .main { flex: 1; overflow-x: hidden; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 28px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .topbar-sub   { font-size: 12px; color: var(--text3); margin-left: 2px; }
+  .topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+
+  /* ─── BUTTONS ──────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: var(--radius2);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: none; transition: opacity .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary  { background: var(--accent);  color: #fff; }
+  .btn-primary:hover  { opacity: .85; }
+  .btn-success  { background: var(--green);   color: #fff; }
+  .btn-success:hover  { opacity: .85; }
+  .btn-danger   { background: var(--red);     color: #fff; }
+  .btn-ghost    { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
+  .btn-ghost:hover  { color: var(--text); border-color: var(--text3); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* ─── PAGE ──────────────────────────────────── */
+  .page { display: none; padding: 28px; }
+  .page.active { display: block; }
+
+  /* ─── CARDS ─────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .card + .card { margin-top: 16px; }
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .card-title  { font-size: 14px; font-weight: 700; color: var(--text); }
+  .card-sub    { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .card-actions { margin-left: auto; }
+
+  /* ─── GRID ──────────────────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+
+  /* ─── STAT CARDS ─────────────────────────────── */
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .stat-card.blue::before   { background: linear-gradient(90deg, #2f81f7, #388bfd); }
+  .stat-card.green::before  { background: linear-gradient(90deg, #3fb950, #56d364); }
+  .stat-card.purple::before { background: linear-gradient(90deg, #bc8cff, #d2a8ff); }
+  .stat-card.orange::before { background: linear-gradient(90deg, #f0883e, #ffa657); }
+
+  .stat-value { font-size: 28px; font-weight: 800; line-height: 1.2; margin: 6px 0 4px; }
+  .stat-label { font-size: 12px; color: var(--text3); font-weight: 500; }
+  .stat-icon  { font-size: 28px; position: absolute; right: 18px; top: 18px; opacity: .15; }
+  .stat-delta { font-size: 11px; margin-top: 6px; }
+  .stat-delta.up   { color: var(--green); }
+  .stat-delta.down { color: var(--red); }
+
+  /* ─── PIPELINE ───────────────────────────────── */
+  .pipeline {
+    display: flex; align-items: stretch; gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .pipe-step {
+    flex: 1; padding: 20px 16px; position: relative;
+    border-right: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .pipe-step:last-child { border-right: none; }
+  .pipe-step:hover { background: var(--surface2); }
+  .pipe-step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 10px; flex-shrink: 0;
+  }
+  .pipe-step-num.done   { background: var(--green); color: #fff; }
+  .pipe-step-num.active { background: var(--accent); color: #fff; box-shadow: 0 0 0 3px rgba(47,129,247,.25); }
+  .pipe-step-num.idle   { background: var(--surface2); color: var(--text3); border: 1px solid var(--border2); }
+  .pipe-step-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .pipe-step-desc  { font-size: 11px; color: var(--text3); line-height: 1.5; }
+  .pipe-arrow {
+    position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+    z-index: 1; font-size: 16px; color: var(--text3);
+  }
+
+  /* ─── FORMS ──────────────────────────────────── */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--text2); margin-bottom: 6px;
+  }
+  .form-label .required { color: var(--red); margin-left: 2px; }
+  .form-label .hint { font-weight: 400; color: var(--text3); margin-left: 6px; }
+  .form-control {
+    width: 100%; background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius2); color: var(--text);
+    padding: 8px 12px; font-size: 13px; font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  .form-control:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(47,129,247,.15);
+  }
+  .form-control::placeholder { color: var(--text3); }
+  textarea.form-control { resize: vertical; min-height: 90px; font-family: 'Courier New', monospace; font-size: 12px; }
+  select.form-control { cursor: pointer; }
+  .form-control.mono { font-family: 'Courier New', monospace; font-size: 12px; letter-spacing: .3px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row.col-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .input-group { display: flex; }
+  .input-group .form-control { border-radius: var(--radius2) 0 0 var(--radius2); }
+  .input-group .btn { border-radius: 0 var(--radius2) var(--radius2) 0; white-space: nowrap; }
+
+  .form-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 13px; color: var(--text); }
+  .toggle-sub   { font-size: 11px; color: var(--text3); }
+
+  .toggle {
+    position: relative; width: 40px; height: 22px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--surface2); border-radius: 99px;
+    border: 1px solid var(--border2);
+    transition: background .2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute;
+    width: 16px; height: 16px; left: 2px; bottom: 2px;
+    background: var(--text3); border-radius: 50%;
+    transition: transform .2s, background .2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(18px); background: #fff; }
+
+  /* ─── BADGE / TAG ─────────────────────────────── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 99px;
+  }
+  .badge-blue   { background: rgba(47,129,247,.15); color: var(--accent2); }
+  .badge-green  { background: rgba(63,185,80,.15);  color: var(--green); }
+  .badge-yellow { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .badge-red    { background: rgba(248,81,73,.15);  color: var(--red); }
+  .badge-purple { background: rgba(188,140,255,.15);color: var(--purple); }
+  .badge-gray   { background: var(--surface2);      color: var(--text3); }
+
+  /* ─── PROGRESS BAR ───────────────────────────── */
+  .progress-wrap { background: var(--bg); border-radius: 99px; height: 6px; overflow: hidden; }
+  .progress-bar  { height: 100%; border-radius: 99px; transition: width .4s ease; }
+  .progress-bar.blue   { background: linear-gradient(90deg, #2f81f7, #388bfd); }
+  .progress-bar.green  { background: linear-gradient(90deg, #3fb950, #56d364); }
+  .progress-bar.purple { background: linear-gradient(90deg, #bc8cff, #d2a8ff); }
+  .progress-bar.yellow { background: linear-gradient(90deg, #d29922, #e3b341); }
+
+  /* ─── TOPIC LIST ─────────────────────────────── */
+  .topic-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .topic-row:last-child { border-bottom: none; }
+  .topic-icon  { font-size: 20px; flex-shrink: 0; }
+  .topic-name  { font-size: 13px; font-weight: 600; flex: 1; }
+  .topic-meta  { font-size: 11px; color: var(--text3); }
+  .topic-count { font-size: 12px; color: var(--text2); min-width: 60px; text-align: right; }
+
+  /* ─── LOGS ───────────────────────────────────── */
+  .log-box {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius2); padding: 12px;
+    font-family: 'Courier New', monospace; font-size: 12px;
+    line-height: 1.7; max-height: 280px; overflow-y: auto;
+    color: var(--text2);
+  }
+  .log-line-ok     { color: var(--green); }
+  .log-line-warn   { color: var(--yellow); }
+  .log-line-err    { color: var(--red); }
+  .log-line-info   { color: var(--accent2); }
+  .log-line-skip   { color: var(--text3); }
+  .log-ts          { color: var(--text3); margin-right: 6px; }
+
+  /* ─── TABS ───────────────────────────────────── */
+  .tab-bar {
+    display: flex; gap: 2px; border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .tab-btn {
+    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    color: var(--text3); background: none; border: none;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: color .15s, border-color .15s;
+  }
+  .tab-btn:hover  { color: var(--text2); }
+  .tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent); }
+  .tab-content    { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ─── TABLE ──────────────────────────────────── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .6px; color: var(--text3);
+    padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 12px; font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  td.mono { font-family: 'Courier New', monospace; font-size: 12px; color: var(--text2); }
+
+  /* ─── DIVIDER ─────────────────────────────────── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .section-title {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ─── ALERT ──────────────────────────────────── */
+  .alert {
+    display: flex; gap: 10px; padding: 12px 14px;
+    border-radius: var(--radius2); border-left: 3px solid;
+    margin-bottom: 16px; font-size: 13px;
+  }
+  .alert-blue   { background: rgba(47,129,247,.08);  border-color: var(--accent); }
+  .alert-yellow { background: rgba(210,153,34,.08);  border-color: var(--yellow); color: var(--text); }
+  .alert-green  { background: rgba(63,185,80,.08);   border-color: var(--green); }
+  .alert .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert-content { flex: 1; }
+  .alert-title { font-weight: 700; margin-bottom: 2px; }
+
+  /* ─── STEP FLOW ──────────────────────────────── */
+  .step-flow { display: flex; flex-direction: column; gap: 0; }
+  .step-item {
+    display: flex; gap: 14px; padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-item:last-child { border-bottom: none; }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-body {}
+  .step-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .step-desc  { font-size: 12px; color: var(--text3); line-height: 1.6; }
+
+  /* ─── CAPTION PREVIEW ────────────────────────── */
+  .caption-preview {
+    background: var(--bg); border: 1px solid var(--border2);
+    border-radius: var(--radius2); padding: 14px 16px;
+    font-size: 13px; line-height: 1.8; color: var(--text);
+    position: relative; white-space: pre-wrap; word-break: break-word;
+  }
+  .caption-preview .cap-link { color: var(--accent2); text-decoration: underline; }
+  .caption-preview .cap-bold { font-weight: 700; }
+  .caption-preview .cap-italic { font-style: italic; }
+  .preview-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .6px;
+    text-transform: uppercase; color: var(--text3);
+    margin-bottom: 8px;
+  }
+
+  /* ─── MEDIA THUMB ─────────────────────────────── */
+  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px,1fr)); gap: 6px; }
+  .media-thumb {
+    aspect-ratio: 1; border-radius: 6px; overflow: hidden;
+    background: var(--surface2); position: relative;
+    border: 1px solid var(--border); cursor: pointer;
+    transition: transform .15s, border-color .15s;
+  }
+  .media-thumb:hover { transform: scale(1.03); border-color: var(--accent); }
+  .media-thumb-icon { font-size: 24px; display: flex; align-items: center; justify-content: center; height: 100%; }
+  .media-thumb-type {
+    position: absolute; bottom: 4px; right: 4px;
+    background: rgba(0,0,0,.7); color: #fff; border-radius: 3px;
+    font-size: 9px; padding: 1px 4px; font-weight: 600;
+  }
+  .media-thumb-count {
+    position: absolute; top: 4px; left: 4px;
+    background: var(--accent); color: #fff; border-radius: 3px;
+    font-size: 9px; padding: 1px 5px; font-weight: 700;
+  }
+
+  /* ─── RESPONSIVE ─────────────────────────────── */
+  @media (max-width: 900px) {
+    .sidebar { width: 200px; }
+    .grid-4 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .pipeline { flex-direction: column; }
+    .pipe-step { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+  @media (max-width: 650px) {
+    .sidebar { display: none; }
+    .page { padding: 16px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* ─── MISC UTILS ──────────────────────────────── */
+  .mt-8  { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mb-4  { margin-bottom: 4px; }
+  .mb-8  { margin-bottom: 8px; }
+  .mb-16 { margin-bottom: 16px; }
+  .flex  { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .gap-8  { gap: 8px; }
+  .gap-12 { gap: 12px; }
+  .ml-auto { margin-left: auto; }
+  .text-green  { color: var(--green); }
+  .text-red    { color: var(--red); }
+  .text-yellow { color: var(--yellow); }
+  .text-blue   { color: var(--accent2); }
+  .text-purple { color: var(--purple); }
+  .text-dim    { color: var(--text3); }
+  .text-sm     { font-size: 12px; }
+  .font-mono   { font-family: 'Courier New', monospace; }
+  .fw-700      { font-weight: 700; }
+
+  /* ─── ANIMATED RING ──────────────────────────── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { animation: spin .8s linear infinite; display: inline-block; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .pulsing { animation: pulse 1.8s ease-in-out infinite; }
+
+  /* ─── NOTIFICATION DOT ───────────────────────── */
+  .notif-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); display: inline-block;
+  }
+  .notif-dot.warn   { background: var(--yellow); }
+  .notif-dot.err    { background: var(--red); }
+  .notif-dot.idle   { background: var(--text3); }
+</style>
+</head>
+<body>
+
+<div class="app-wrap">
+
+  <!-- ══════════ SIDEBAR ══════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">📡</div>
+        <div>
+          <div class="logo-text">TG Clone Pro</div>
+          <div class="logo-sub">Forum Migration Suite</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Tổng quan</div>
+      <button class="nav-item active" onclick="showPage('dashboard', this)">
+        <span class="ni-icon">🏠</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showPage('workflow', this)">
+        <span class="ni-icon">🔄</span> Workflow
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Thành phần</div>
+      <button class="nav-item" onclick="showPage('userbot', this)">
+        <span class="ni-icon">👤</span> Userbot
+        <span class="ni-badge green">OK</span>
+      </button>
+      <button class="nav-item" onclick="showPage('bot', this)">
+        <span class="ni-icon">🤖</span> Bot
+        <span class="ni-badge green">OK</span>
+      </button>
+      <button class="nav-item" onclick="showPage('forum', this)">
+        <span class="ni-icon">💬</span> Forum
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Công cụ</div>
+      <button class="nav-item" onclick="showPage('clone', this)">
+        <span class="ni-icon">📋</span> Clone Topics
+      </button>
+      <button class="nav-item" onclick="showPage('caption', this)">
+        <span class="ni-icon">✏️</span> Caption Editor
+      </button>
+      <button class="nav-item" onclick="showPage('media', this)">
+        <span class="ni-icon">🖼️</span> Media Manager
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Hệ thống</div>
+      <button class="nav-item" onclick="showPage('logs', this)">
+        <span class="ni-icon">📜</span> Logs
+        <span class="ni-badge yellow">12</span>
+      </button>
+      <button class="nav-item" onclick="showPage('settings', this)">
+        <span class="ni-icon">⚙️</span> Cài đặt
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="avatar">U</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">@my_userbot</div>
+        <div class="sidebar-user-status"><span class="status-dot"></span>Đang hoạt động</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════════ MAIN CONTENT ══════════ -->
+  <main class="main">
+
+    <!-- ── DASHBOARD ── -->
+    <div id="page-dashboard" class="page active">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Dashboard</div>
+          <div class="topbar-sub">Tổng quan hệ thống</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="refreshStats()">🔄 Làm mới</button>
+          <button class="btn btn-primary btn-sm" onclick="showPage('clone', document.querySelector('[onclick*=clone]'))">
+            ▶️ Bắt đầu Clone
+          </button>
+        </div>
+      </div>
+      <div class="page" style="display:block; padding:28px;">
+
+        <!-- Stats row -->
+        <div class="grid-4">
+          <div class="stat-card blue">
+            <div class="stat-icon">📨</div>
+            <div class="stat-label">Tin nhắn đã clone</div>
+            <div class="stat-value" id="stat-msgs">12,847</div>
+            <div class="stat-delta up">↑ 3,241 hôm nay</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">📂</div>
+            <div class="stat-label">Topics đã tạo</div>
+            <div class="stat-value" id="stat-topics">48</div>
+            <div class="stat-delta up">↑ 5 mới nhất</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-icon">🖼️</div>
+            <div class="stat-label">Media đã lưu</div>
+            <div class="stat-value" id="stat-media">6,209</div>
+            <div class="stat-delta up">↑ 1,088 ảnh/video</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-label">Bot requests</div>
+            <div class="stat-value" id="stat-reqs">3,512</div>
+            <div class="stat-delta up">↑ 247 hôm nay</div>
+          </div>
+        </div>
+
+        <!-- Pipeline status -->
+        <div class="mt-16">
+          <div class="section-title">🔄 Luồng hoạt động</div>
+          <div class="pipeline">
+            <div class="pipe-step">
+              <div class="pipe-step-num done">✓</div>
+              <div class="pipe-step-title">1. Forum Nguồn</div>
+              <div class="pipe-step-desc">Kênh gốc có đầy đủ topics, media và caption. Userbot đã kết nối.</div>
+              <div class="pipe-arrow">›</div>
+            </div>
+            <div class="pipe-step">
+              <div class="pipe-step-num active">2</div>
+              <div class="pipe-step-title">2. Userbot Clone</div>
+              <div class="pipe-step-desc">Clone topics + bài đăng. Video → thumbnail. Album giữ nguyên nhóm.</div>
+              <div class="pipe-arrow">›</div>
+            </div>
+            <div class="pipe-step">
+              <div class="pipe-step-num active">3</div>
+              <div class="pipe-step-title">3. Bot Lưu Media</div>
+              <div class="pipe-step-desc">Bot lấy file gốc từ forum nguồn, lưu ID để truy xuất sau.</div>
+              <div class="pipe-arrow">›</div>
+            </div>
+            <div class="pipe-step">
+              <div class="pipe-step-num idle">4</div>
+              <div class="pipe-step-title">4. Caption Embed</div>
+              <div class="pipe-step-desc">Thêm "Nhấp vào link này để xem: [bot_link]" vào mỗi bài.</div>
+              <div class="pipe-arrow">›</div>
+            </div>
+            <div class="pipe-step">
+              <div class="pipe-step-num idle">5</div>
+              <div class="pipe-step-title">5. Trả Media Ẩn</div>
+              <div class="pipe-step-desc">Người dùng bấm link → Bot gửi album gốc, ẩn tên nguồn.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two-column bottom -->
+        <div class="grid-2 mt-16">
+
+          <!-- Topic progress -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">📂 Tiến độ Topics</div>
+                <div class="card-sub">48/53 topics đã clone xong</div>
+              </div>
+              <div class="card-actions">
+                <span class="badge badge-yellow">Đang chạy</span>
+              </div>
+            </div>
+            <div class="progress-wrap mb-8">
+              <div class="progress-bar blue" style="width: 90%"></div>
+            </div>
+            <div class="text-sm text-dim mb-16">90% — 5 topics còn lại</div>
+
+            <div class="topic-row">
+              <div class="topic-icon">🎬</div>
+              <div>
+                <div class="topic-name">Phim Lẻ 2024</div>
+                <div class="topic-meta">src=1234 → dst=9871</div>
+              </div>
+              <span class="badge badge-green">✓ Xong</span>
+              <div class="topic-count">2,441 msg</div>
+            </div>
+            <div class="topic-row">
+              <div class="topic-icon">📺</div>
+              <div>
+                <div class="topic-name">Phim Bộ Hot</div>
+                <div class="topic-meta">src=1235 → dst=9872</div>
+              </div>
+              <span class="badge badge-blue">⏳ Clone</span>
+              <div class="topic-count">1,823 msg</div>
+            </div>
+            <div class="topic-row">
+              <div class="topic-icon">🎵</div>
+              <div>
+                <div class="topic-name">Nhạc Remix</div>
+                <div class="topic-meta">src=1236 → dst=9873</div>
+              </div>
+              <span class="badge badge-green">✓ Xong</span>
+              <div class="topic-count">987 msg</div>
+            </div>
+            <div class="topic-row">
+              <div class="topic-icon">🖼️</div>
+              <div>
+                <div class="topic-name">Ảnh Chế</div>
+                <div class="topic-meta">src=1237 → dst=—</div>
+              </div>
+              <span class="badge badge-gray">Chờ</span>
+              <div class="topic-count">—</div>
+            </div>
+          </div>
+
+          <!-- Live log -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">📜 Log thời gian thực</div>
+                <div class="card-sub">Cập nhật liên tục</div>
+              </div>
+              <div class="card-actions">
+                <button class="btn btn-ghost btn-sm" onclick="clearLog()">Xóa</button>
+              </div>
+            </div>
+            <div class="log-box" id="live-log">
+<span class="log-line-ok"><span class="log-ts">[09:41:22]</span>✅ album×4 id=88210→88213 topic9872</span>
+<span class="log-line-ok"><span class="log-ts">[09:41:24]</span>✅ batch×50 id=88214→88263</span>
+<span class="log-line-warn"><span class="log-ts">[09:41:26]</span>⏳ FloodWait 8s (attempt 1/4)</span>
+<span class="log-line-ok"><span class="log-ts">[09:41:35]</span>✅ album×2 id=88270→88271</span>
+<span class="log-line-info"><span class="log-ts">[09:41:37]</span>ℹ️  scan 200 · ✅ 1823 · ⏭️ 12</span>
+<span class="log-line-skip"><span class="log-ts">[09:41:38]</span>⏭️  skip 3 msg (service action)</span>
+<span class="log-line-ok"><span class="log-ts">[09:41:40]</span>✅ batch×50 id=88280→88329</span>
+<span class="log-line-err"><span class="log-ts">[09:41:41]</span>⚠️  id=88330: MessageIdInvalidError</span>
+<span class="log-line-ok"><span class="log-ts">[09:41:43]</span>✅ Bot: gửi album×3 → user @viewer_01</span>
+<span class="log-line-ok"><span class="log-ts">[09:41:45]</span>✅ Caption embed: msg 88290 ✓</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Component status -->
+        <div class="mt-16 card">
+          <div class="card-header">
+            <div class="card-title">⚡ Trạng thái thành phần</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Thành phần</th>
+                  <th>Phiên / Token</th>
+                  <th>Trạng thái</th>
+                  <th>Uptime</th>
+                  <th>Tác vụ cuối</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>👤 Userbot</strong><br><span class="text-dim text-sm">Telethon session</span></td>
+                  <td class="mono">my_session</td>
+                  <td><span class="badge badge-green">● Online</span></td>
+                  <td class="text-dim">14h 32m</td>
+                  <td class="text-dim text-sm">Clone album 88213</td>
+                  <td><button class="btn btn-ghost btn-sm">Chi tiết</button></td>
+                </tr>
+                <tr>
+                  <td><strong>🤖 Bot</strong><br><span class="text-dim text-sm">python-telegram-bot</span></td>
+                  <td class="mono">7823...aXkP</td>
+                  <td><span class="badge badge-green">● Online</span></td>
+                  <td class="text-dim">14h 32m</td>
+                  <td class="text-dim text-sm">Trả media → @user01</td>
+                  <td><button class="btn btn-ghost btn-sm">Chi tiết</button></td>
+                </tr>
+                <tr>
+                  <td><strong>💬 Forum Nguồn</strong><br><span class="text-dim text-sm">-100123456789</span></td>
+                  <td class="mono">Forum_GocA</td>
+                  <td><span class="badge badge-blue">Đã kết nối</span></td>
+                  <td class="text-dim">—</td>
+                  <td class="text-dim text-sm">48 topics, 12,847 msg</td>
+                  <td><button class="btn btn-ghost btn-sm">Chi tiết</button></td>
+                </tr>
+                <tr>
+                  <td><strong>💬 Forum Đích</strong><br><span class="text-dim text-sm">-100987654321</span></td>
+                  <td class="mono">Forum_MoiB</td>
+                  <td><span class="badge badge-blue">Đã kết nối</span></td>
+                  <td class="text-dim">—</td>
+                  <td class="text-dim text-sm">43 topics tạo xong</td>
+                  <td><button class="btn btn-ghost btn-sm">Chi tiết</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── WORKFLOW ── -->
+    <div id="page-workflow" class="page">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Workflow</div>
+          <div class="topbar-sub">Sơ đồ luồng hoạt động đầy đủ</div>
+        </div>
+      </div>
+      <div style="padding:28px;">
+
+        <div class="alert alert-blue">
+          <span class="alert-icon">💡</span>
+          <div class="alert-content">
+            <div class="alert-title">Kiến trúc hệ thống</div>
+            Hệ thống gồm 3 thành phần phối hợp: <strong>Userbot</strong> clone nội dung sang forum mới,
+            <strong>Bot</strong> lưu media gốc và trả về ẩn danh, <strong>Caption Editor</strong> nhúng link bot vào mỗi bài.
+          </div>
+        </div>
+
+        <div class="grid-2 gap-12">
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🔄 Luồng Clone (Userbot)</div>
+            </div>
+            <div class="step-flow">
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                  <div class="step-title">Kết nối Forum Nguồn</div>
+                  <div class="step-desc">Userbot xác thực qua API ID + Hash + số điện thoại. Preload toàn bộ danh sách topics và metadata.</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                  <div class="step-title">Clone cấu trúc Topics (Phase 1)</div>
+                  <div class="step-desc">Tạo topic tương ứng ở Forum Đích với cùng tên, màu icon, emoji premium. Match theo title nếu đã tồn tại. Lưu topic_map để resume.</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                  <div class="step-title">Forward Messages (Phase 2)</div>
+                  <div class="step-desc">Duyệt từng topic theo iter_messages(reply_to=topic_id). Gom album theo grouped_id → 1 API call. Batch 50 msg đơn/call. Resume qua state file.</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                  <div class="step-title">Xử lý Video → Thumbnail</div>
+                  <div class="step-desc">Tin nhắn chứa video: chỉ lấy thumbnail (ảnh đại diện). Không clone file video nặng để tiết kiệm quota và tốc độ. Video gốc vẫn lưu ở forum nguồn.</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">5</div>
+                <div class="step-body">
+                  <div class="step-title">Ẩn Nguồn (drop_author)</div>
+                  <div class="step-desc">Dùng ForwardMessagesRequest với drop_author=True → ẩn "Forwarded from". Giữ nguyên 100% nội dung: emoji premium, bold, italic, album, spoiler.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🤖 Luồng Bot (Media Serve)</div>
+            </div>
+            <div class="step-flow">
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                  <div class="step-title">Bot lấy Media từ Forum Nguồn</div>
+                  <div class="step-desc">Sau khi clone, bot dùng Userbot để lấy file_id gốc từ mỗi album/media ở forum nguồn. Lưu vào database mapping: msg_id → [file_id_list].</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                  <div class="step-title">Tạo Link Bot cho mỗi bài</div>
+                  <div class="step-desc">Mỗi bài cloned có unique token: t.me/YourBot?start=alb_<token>. Token map tới danh sách file_id gốc. Lưu vào JSON/SQLite.</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                  <div class="step-title">Nhúng Link vào Caption</div>
+                  <div class="step-desc">Caption Editor tự động thêm vào cuối mỗi bài cloned: <em>[caption gốc] — Nhấp vào link này để xem: t.me/Bot?start=alb_XXX</em></div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                  <div class="step-title">Người dùng bấm link Bot</div>
+                  <div class="step-desc">Bot nhận /start alb_XXX → tra database → lấy file_id list → gửi album gốc dùng send_media_group(). Không kèm tên nguồn, không forward header.</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">5</div>
+                <div class="step-body">
+                  <div class="step-title">Trả Album Nguyên Vẹn</div>
+                  <div class="step-desc">Bot gửi đúng album gốc (không tách lẻ), giữ caption gốc, ẩn nguồn. Flood wait tự retry. Thống kê số lượt xem per bài.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="card mt-16">
+          <div class="card-header">
+            <div class="card-title">📐 Sơ đồ kiến trúc tổng thể</div>
+          </div>
+          <div style="background:var(--bg);border-radius:var(--radius2);padding:20px;font-family:'Courier New',monospace;font-size:12px;line-height:2;color:var(--text2);">
+<span class="text-blue fw-700">┌─────────────────────────────────────────────────────────────────────┐</span>
+<span class="text-blue fw-700">│                    TG FORUM CLONE SYSTEM                            │</span>
+<span class="text-blue fw-700">└─────────────────────────────────────────────────────────────────────┘</span>
+
+<span class="text-yellow">   FORUM NGUỒN (private/public)</span>
+<span class="text-dim">     Topic A ──────┐</span>
+<span class="text-dim">     Topic B ──────┤  iter_messages(reply_to=topic_id, reverse=True)</span>
+<span class="text-dim">     Topic C ──────┤</span>
+<span class="text-dim">         ...       │</span>
+<span class="text-dim">                   ▼</span>
+<span class="text-green">   ┌─────────────────────────────────┐      ┌──────────────────────┐</span>
+<span class="text-green">   │       USERBOT (Telethon)        │      │    BOT (PTB)         │</span>
+<span class="text-green">   │  session_v24 + API_ID/HASH      │      │  BotToken            │</span>
+<span class="text-green">   └─────────┬───────────────────────┘      └──────┬───────────────┘</span>
+<span class="text-dim">             │ Phase 1: Clone topics                │ Lưu file_id gốc</span>
+<span class="text-dim">             │ Phase 2: Forward msgs                 │ Map token → album</span>
+<span class="text-dim">             │ Video → thumbnail only               │</span>
+<span class="text-dim">             │ Album → grouped (1 call)             │</span>
+<span class="text-dim">             │ drop_author=True                     │</span>
+<span class="text-dim">             ▼                                      ▼</span>
+<span class="text-purple">   FORUM ĐÍCH (new group/channel)      DATABASE (SQLite/JSON)</span>
+<span class="text-dim">     Topic A' ── caption gốc            token_map:</span>
+<span class="text-dim">               ── thumbnail video         alb_abc → [file_id1, file_id2]</span>
+<span class="text-dim">               ── "Nhấp xem: t.me/bot?   alb_def → [file_id3, file_id4, file_id5]</span>
+<span class="text-dim">                    start=alb_XXX"       ...</span>
+<span class="text-dim">                         │</span>
+<span class="text-dim">                         │ User tap link</span>
+<span class="text-dim">                         ▼</span>
+<span class="text-green">              ┌───────────────────────┐</span>
+<span class="text-green">              │  BOT HANDLER          │</span>
+<span class="text-dim">              │  /start alb_XXX       │</span>
+<span class="text-dim">              │  → lookup DB          │</span>
+<span class="text-dim">              │  → send_media_group() │</span>
+<span class="text-dim">              │  → ẩn nguồn          │</span>
+<span class="text-dim">              │  → giữ album gốc     │</span>
+<span class="text-green">              └───────────────────────┘</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── USERBOT CONFIG ── -->
+    <div id="page-userbot" class="page">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">👤 Userbot</div>
+          <div class="topbar-sub">Cấu hình Telethon userbot</div>
+        </div>
+        <div class="topbar-actions">
+          <span class="badge badge-green">● Đang kết nối</span>
+          <button class="btn btn-ghost btn-sm" onclick="testConnection('userbot')">🔌 Kiểm tra</button>
+          <button class="btn btn-primary btn-sm" onclick="saveConfig('userbot')">💾 Lưu</button>
+        </div>
+      </div>
+      <div style="padding:28px;">
+
+        <div class="grid-2 gap-12">
+          <div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">🔑 Thông tin xác thực</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">API ID <span class="required">*</span></label>
+                <input class="form-control mono" placeholder="28030819" value="28030819" />
+                <div class="form-hint">Lấy từ my.telegram.org → App API</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">API Hash <span class="required">*</span></label>
+                <div class="input-group">
+                  <input class="form-control mono" type="password" id="api-hash" placeholder="d1eb88f3a2ca33b2..." value="d1eb88f3a2ca33b2bba557d1dcf9c522" />
+                  <button class="btn btn-ghost" onclick="togglePass('api-hash')">👁️</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Số điện thoại <span class="required">*</span></label>
+                <input class="form-control" placeholder="+84 xxx xxx xxx" value="+1 582 558 1346" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tên session</label>
+                <input class="form-control mono" placeholder="my_session" value="session_v24" />
+                <div class="form-hint">Tên file .session lưu cục bộ</div>
+              </div>
+            </div>
+
+            <div class="card mt-16">
+              <div class="card-header">
+                <div class="card-title">⚙️ Tùy chỉnh</div>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Ẩn tên nguồn (drop_author)</div>
+                  <div class="toggle-sub">Forward không hiện "Forwarded from"</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Bỏ qua topic General (id=1)</div>
+                  <div class="toggle-sub">Không clone messages của General</div>
+                </div>
+                <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Auto retry FloodWait</div>
+                  <div class="toggle-sub">Tự chờ và retry khi bị rate limit</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Resume tự động</div>
+                  <div class="toggle-sub">Tiếp tục từ điểm dừng khi restart</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="form-group mt-12">
+                <label class="form-label">Delay giữa các edit (giây)</label>
+                <input class="form-control" type="number" value="1.2" min="0.5" max="10" step="0.1" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Batch size (msg/call)</label>
+                <input class="form-control" type="number" value="50" min="1" max="100" />
+                <div class="form-hint">Tối đa 100 theo giới hạn Telegram API</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📊 Thông tin phiên</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">👤</div>
+                <div>
+                  <div class="topic-name">Người dùng</div>
+                  <div class="topic-meta">Đã đăng nhập thành công</div>
+                </div>
+                <div class="topic-count text-green">@my_user</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">🔐</div>
+                <div>
+                  <div class="topic-name">Trạng thái phiên</div>
+                  <div class="topic-meta">session_v24.session</div>
+                </div>
+                <div class="topic-count"><span class="badge badge-green">Active</span></div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">📶</div>
+                <div>
+                  <div class="topic-name">DC (Data Center)</div>
+                  <div class="topic-meta">Singapore</div>
+                </div>
+                <div class="topic-count text-dim">DC4</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">⏱️</div>
+                <div>
+                  <div class="topic-name">Uptime phiên</div>
+                  <div class="topic-meta">Kết nối lúc 18:42</div>
+                </div>
+                <div class="topic-count text-dim">14h 32m</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">📨</div>
+                <div>
+                  <div class="topic-name">Số msg đã xử lý</div>
+                  <div class="topic-meta">Trong phiên này</div>
+                </div>
+                <div class="topic-count text-blue">12,847</div>
+              </div>
+            </div>
+
+            <div class="card mt-16">
+              <div class="card-header">
+                <div class="card-title">🔔 Webhook thông báo</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Webhook URL <span class="hint">(tùy chọn)</span></label>
+                <input class="form-control" placeholder="https://hooks.slack.com/..." />
+                <div class="form-hint">Gửi POST JSON khi clone xong</div>
+              </div>
+              <div class="alert alert-blue" style="margin-top:12px;">
+                <span class="alert-icon">📋</span>
+                <div class="alert-content">
+                  <div class="alert-title">Payload mẫu</div>
+                  <code style="font-size:11px;">{"event":"forum_backup_done","total":12847,"topics":48}</code>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── BOT CONFIG ── -->
+    <div id="page-bot" class="page">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">🤖 Bot</div>
+          <div class="topbar-sub">Bot trả media ẩn nguồn</div>
+        </div>
+        <div class="topbar-actions">
+          <span class="badge badge-green">● Online</span>
+          <button class="btn btn-ghost btn-sm" onclick="testConnection('bot')">🔌 Kiểm tra</button>
+          <button class="btn btn-primary btn-sm" onclick="saveConfig('bot')">💾 Lưu</button>
+        </div>
+      </div>
+      <div style="padding:28px;">
+
+        <div class="grid-2 gap-12">
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">🔑 Token & Kết nối</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bot Token <span class="required">*</span></label>
+                <div class="input-group">
+                  <input class="form-control mono" type="password" id="bot-token" placeholder="7823456789:AAH..." value="7823456789:AAHxxxxxaXkPyyyyzzzz" />
+                  <button class="btn btn-ghost" onclick="togglePass('bot-token')">👁️</button>
+                </div>
+                <div class="form-hint">Lấy từ @BotFather trên Telegram</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Username Bot</label>
+                <input class="form-control" placeholder="@YourShareBot" value="@YourShareBot" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Database file</label>
+                <input class="form-control mono" placeholder="media_db.sqlite" value="media_db.sqlite" />
+                <div class="form-hint">SQLite lưu mapping token → file_id list</div>
+              </div>
+            </div>
+
+            <div class="card mt-16">
+              <div class="card-header">
+                <div class="card-title">📋 Caption Template</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Template cuối mỗi bài</label>
+                <textarea class="form-control" id="caption-template" oninput="updateCaptionPreview()"
+                >{caption_goc}
+
+— Nhấp vào link này để xem: {bot_link}</textarea>
+                <div class="form-hint">
+                  Biến: <code>{caption_goc}</code> · <code>{bot_link}</code> · <code>{topic_name}</code> · <code>{msg_id}</code>
+                </div>
+              </div>
+              <div>
+                <div class="preview-label">Xem trước</div>
+                <div class="caption-preview" id="caption-preview-box">
+<span class="cap-bold">🎬 Phim Lẻ 2024 — Tập 01 Vietsub</span>
+
+Chất lượng: 1080p • Định dạng: MP4
+
+<span class="cap-link">— Nhấp vào link này để xem: t.me/YourShareBot?start=alb_a1b2c3</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">⚙️ Hành vi Bot</div>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Ẩn tên người gửi</div>
+                  <div class="toggle-sub">Bot không hiện "từ @source_channel"</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Giữ nguyên album gốc</div>
+                  <div class="toggle-sub">Gửi send_media_group, không tách lẻ</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Giữ caption gốc</div>
+                  <div class="toggle-sub">Caption của bot = caption bài gốc</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Thống kê lượt xem</div>
+                  <div class="toggle-sub">Đếm số người đã bấm link xem</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Cho phép forward lại</div>
+                  <div class="toggle-sub">Người nhận có thể forward media</div>
+                </div>
+                <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Tự xóa sau X giây</div>
+                  <div class="toggle-sub">Bot tự delete msg sau khi gửi</div>
+                </div>
+                <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="form-group mt-12">
+                <label class="form-label">Thông báo chào (message /start)</label>
+                <textarea class="form-control" style="min-height:70px;">🎬 Đang tải media cho bạn...
+Vui lòng chờ trong giây lát.</textarea>
+              </div>
+            </div>
+
+            <div class="card mt-16">
+              <div class="card-header">
+                <div class="card-title">📈 Thống kê Bot</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">👥</div>
+                <div><div class="topic-name">Người dùng unique</div></div>
+                <div class="topic-count text-blue">1,247</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">🔗</div>
+                <div><div class="topic-name">Tổng lượt link bấm</div></div>
+                <div class="topic-count text-blue">3,512</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">🖼️</div>
+                <div><div class="topic-name">Albums đã phục vụ</div></div>
+                <div class="topic-count text-blue">2,891</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">⚡</div>
+                <div><div class="topic-name">Avg response time</div></div>
+                <div class="topic-count text-green">0.8s</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── FORUM ── -->
+    <div id="page-forum" class="page">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">💬 Forum</div>
+          <div class="topbar-sub">Quản lý kênh nguồn và đích</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="preloadTopics()">🔄 Preload Topics</button>
+          <button class="btn btn-primary btn-sm">+ Thêm kênh</button>
+        </div>
+      </div>
+      <div style="padding:28px;">
+
+        <div class="grid-2 gap-12">
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">📥 Forum Nguồn</div>
+                <div class="card-sub">Kênh gốc cần clone</div>
+              </div>
+              <span class="badge badge-green">Đã kết nối</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ID / Username / Link <span class="required">*</span></label>
+              <input class="form-control mono" placeholder="-100123456789 hoặc @forum_name" value="-100123456789" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Filter nội dung</label>
+              <select class="form-control">
+                <option value="all" selected>Tất cả</option>
+                <option value="media">Chỉ có media</option>
+                <option value="video">Chỉ video</option>
+                <option value="photo">Chỉ ảnh</option>
+              </select>
+            </div>
+            <hr class="divider" />
+            <div class="topic-row">
+              <div class="topic-icon">📂</div>
+              <div><div class="topic-name">Tổng topics</div></div>
+              <div class="topic-count text-blue">53</div>
+            </div>
+            <div class="topic-row">
+              <div class="topic-icon">📨</div>
+              <div><div class="topic-name">Tổng messages</div></div>
+              <div class="topic-count text-blue">24,891</div>
+            </div>
+            <div class="topic-row">
+              <div class="topic-icon">🖼️</div>
+              <div><div class="topic-name">Media files</div></div>
+              <div class="topic-count text-blue">18,432</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">📤 Forum Đích</div>
+                <div class="card-sub">Kênh mới nhận clone</div>
+              </div>
+              <span class="badge badge-blue">Sẵn sàng</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ID / Username / Link <span class="required">*</span></label>
+              <input class="form-control mono" placeholder="-100987654321 hoặc @new_forum" value="-100987654321" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Chế độ icon topic</label>
+              <select class="form-control" id="icon-mode" onchange="toggleIconMode()">
+                <option value="clone" selected>Auto clone icon từ nguồn</option>
+                <option value="fixed">Dùng emoji cố định</option>
+                <option value="none">Không có icon</option>
+              </select>
+            </div>
+            <div class="form-group" id="icon-emoji-group" style="display:none">
+              <label class="form-label">Emoji ID / Link message</label>
+              <input class="form-control mono" placeholder="5456247155315587821 hoặc https://t.me/..." />
+              <div class="form-hint">Document ID của premium emoji hoặc link msg chứa emoji đó</div>
+            </div>
+            <hr class="divider" />
+            <div class="topic-row">
+              <div class="topic-icon">📂</div>
+              <div><div class="topic-name">Topics đã tạo</div></div>
+              <div class="topic-count text-green">43</div>
+            </div>
+            <div class="topic-row">
+              <div class="topic-icon">📨</div>
+              <div><div class="topic-name">Messages đã clone</div></div>
+              <div class="topic-count text-green">12,847</div>
+            </div>
+            <div class="topic-row">
+              <div class="topic-icon">📌</div>
+              <div><div class="topic-name">Topics còn lại</div></div>
+              <div class="topic-count text-yellow">10</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Topic map table -->
+        <div class="card mt-16">
+          <div class="card-header">
+            <div class="card-title">🗺️ Bảng map Topics (src → dst)</div>
+            <div class="card-actions">
+              <button class="btn btn-ghost btn-sm">📥 Export JSON</button>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('topics','all', this)">Tất cả (53)</button>
+            <button class="tab-btn" onclick="switchTab('topics','done', this)">✅ Xong (43)</button>
+            <button class="tab-btn" onclick="switchTab('topics','pending', this)">⏳ Chờ (10)</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Icon</th>
+                  <th>Tên Topic</th>
+                  <th>Src ID</th>
+                  <th>Dst ID</th>
+                  <th>Msg đã clone</th>
+                  <th>Tiến độ</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>🎬</td>
+                  <td><strong>Phim Lẻ 2024</strong></td>
+                  <td class="mono">1234</td>
+                  <td class="mono">9871</td>
+                  <td>2,441 / 2,441</td>
+                  <td style="min-width:100px">
+                    <div class="progress-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+                  </td>
+                  <td><span class="badge badge-green">✓ Xong</span></td>
+                </tr>
+                <tr>
+                  <td>📺</td>
+                  <td><strong>Phim Bộ Hot</strong></td>
+                  <td class="mono">1235</td>
+                  <td class="mono">9872</td>
+                  <td>1,100 / 1,823</td>
+                  <td style="min-width:100px">
+                    <div class="progress-wrap"><div class="progress-bar blue" style="width:60%"></div></div>
+                  </td>
+                  <td><span class="badge badge-blue">⏳ Đang clone</span></td>
+                </tr>
+                <tr>
+                  <td>🎵</td>
+                  <td><strong>Nhạc Remix</strong></td>
+                  <td class="mono">1236</td>
+                  <td class="mono">9873</td>
+                  <td>987 / 987</td>
+                  <td style="min-width:100px">
+                    <div class="progress-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+                  </td>
+                  <td><span class="badge badge-green">✓ Xong</span></td>
+                </tr>
+                <tr>
+                  <td>🖼️</td>
+                  <td><strong>Ảnh Chế</strong></td>
+                  <td class="mono">1237</td>
+                  <td class="mono text-dim">—</td>
+                  <td class="text-dim">—</td>
+                  <td style="min-width:100px">
+                    <div class="progress-wrap"><div class="progress-bar blue" style="width:0%"></div></div>
+                  </td>
+                  <td><span class="badge badge-gray">Chờ</span></td>
+                </tr>
+                <tr>
+                  <td>🎮</td>
+                  <td><strong>Game & Review</strong></td>
+                  <td class="mono">1238</td>
+                  <td class="mono">9875</td>
+                  <td>3,201 / 3,201</td>
+                  <td style="min-width:100px">
+                    <div class="progress-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+                  </td>
+                  <td><span class="badge badge-green">✓ Xong</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── CLONE ── -->
+    <div id="page-clone" class="page">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">📋 Clone Topics</div>
+          <div class="topbar-sub">Chạy tiến trình clone</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-danger btn-sm" onclick="stopClone()">⏹ Dừng</button>
+          <button class="btn btn-success" onclick="startClone()">▶️ Chạy Clone</button>
+        </div>
+      </div>
+      <div style="padding:28px;">
+
+        <div class="alert alert-yellow">
+          <span class="alert-icon">⚠️</span>
+          <div class="alert-content">
+            <div class="alert-title">Đang chạy — Topic "Phim Bộ Hot" (2/5 topics)</div>
+            Userbot đang clone msg từ topic 1235 → 9872. Batch 50 msg/call. Không tắt để tránh mất tiến độ.
+          </div>
+        </div>
+
+        <div class="grid-2 gap-12">
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">⚙️ Cấu hình Clone</div>
+              </div>
+
+              <div class="tab-bar">
+                <button class="tab-btn active" onclick="switchTab('clone-mode','backup', this)">📦 Backup Forum</button>
+                <button class="tab-btn" onclick="switchTab('clone-mode','forward', this)">📤 Forward thường</button>
+              </div>
+
+              <div id="tab-clone-mode-backup" class="tab-content active">
+                <div class="form-group">
+                  <label class="form-label">Forum Nguồn</label>
+                  <input class="form-control mono" value="-100123456789" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Forum Đích</label>
+                  <input class="form-control mono" value="-100987654321" />
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Chế độ icon</label>
+                    <select class="form-control">
+                      <option selected>Clone từ nguồn</option>
+                      <option>Emoji cố định</option>
+                      <option>Không icon</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Filter</label>
+                    <select class="form-control">
+                      <option selected>Tất cả</option>
+                      <option>Chỉ media</option>
+                      <option>Chỉ video</option>
+                      <option>Chỉ ảnh</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="toggle-row">
+                  <div><div class="toggle-label">Ẩn nguồn</div></div>
+                  <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                  <div><div class="toggle-label">Video → thumbnail only</div></div>
+                  <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                  <div><div class="toggle-label">Bot lưu file_id sau clone</div></div>
+                  <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                  <div><div class="toggle-label">Bỏ qua General (id=1)</div></div>
+                  <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+                </div>
+              </div>
+
+              <div id="tab-clone-mode-forward" class="tab-content">
+                <div class="form-group">
+                  <label class="form-label">Link BẮT ĐẦU</label>
+                  <input class="form-control mono" placeholder="https://t.me/c/123456/1/100" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Link KẾT THÚC <span class="hint">(tùy chọn)</span></label>
+                  <input class="form-control mono" placeholder="Để trống = tới msg mới nhất" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Kênh Đích</label>
+                  <input class="form-control mono" placeholder="-100987654321" />
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📊 Tiến độ hiện tại</div>
+              </div>
+
+              <div class="mb-8 text-sm text-dim">Topics hoàn thành</div>
+              <div class="progress-wrap mb-8">
+                <div class="progress-bar blue" id="prog-topics" style="width: 40%"></div>
+              </div>
+              <div class="text-sm text-dim mb-16">2 / 5 topics · 40%</div>
+
+              <div class="mb-8 text-sm text-dim">Messages topic hiện tại</div>
+              <div class="progress-wrap mb-8">
+                <div class="progress-bar purple" id="prog-msgs" style="width: 60%"></div>
+              </div>
+              <div class="text-sm text-dim mb-16" id="prog-msgs-label">1,100 / 1,823 msgs · 60%</div>
+
+              <div class="grid-2 gap-8 mt-8">
+                <div style="background:var(--bg);border-radius:6px;padding:12px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:var(--green)" id="prog-ok">12,847</div>
+                  <div class="text-sm text-dim">✅ Thành công</div>
+                </div>
+                <div style="background:var(--bg);border-radius:6px;padding:12px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:var(--red)" id="prog-fail">23</div>
+                  <div class="text-sm text-dim">❌ Lỗi</div>
+                </div>
+                <div style="background:var(--bg);border-radius:6px;padding:12px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:var(--text2)" id="prog-skip">156</div>
+                  <div class="text-sm text-dim">⏭️ Skip</div>
+                </div>
+                <div style="background:var(--bg);border-radius:6px;padding:12px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:var(--yellow)" id="prog-flood">7</div>
+                  <div class="text-sm text-dim">⏳ FloodWait</div>
+                </div>
+              </div>
+
+              <hr class="divider" />
+              <div class="text-sm text-dim">Topic đang xử lý: <strong class="text-blue">Phim Bộ Hot</strong></div>
+              <div class="text-sm text-dim mt-8">Batch size: <strong>50</strong> · Delay: <strong>1.2s</strong></div>
+              <div class="text-sm text-dim mt-8">Tốc độ: <strong class="text-green">~240 msg/phút</strong></div>
+              <div class="text-sm text-dim mt-8">ETA: <strong class="text-yellow">~3 phút 30 giây</strong></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Log -->
+        <div class="card mt-16">
+          <div class="card-header">
+            <div class="card-title">📜 Log clone</div>
+            <div class="card-actions">
+              <button class="btn btn-ghost btn-sm" onclick="clearLog()">Xóa log</button>
+              <button class="btn btn-ghost btn-sm">📥 Tải xuống</button>
+            </div>
+          </div>
+          <div class="log-box" id="clone-log">
+<span class="log-line-info"><span class="log-ts">[09:38:00]</span>📦 BẮT ĐẦU BACKUP FORUM</span>
+<span class="log-line-ok"><span class="log-ts">[09:38:01]</span>✅ SOURCE: Forum_GocA · DEST: Forum_MoiB</span>
+<span class="log-line-info"><span class="log-ts">[09:38:02]</span>📋 Preload topics... src=53 topics | dst=43 topics</span>
+<span class="log-line-info"><span class="log-ts">[09:38:04]</span>🧱 Phase 1: clone 53 topic(s)...</span>
+<span class="log-line-ok"><span class="log-ts">[09:38:05]</span>🎨 Tạo 'Phim Lẻ 2024' → dst=9871</span>
+<span class="log-line-ok"><span class="log-ts">[09:38:06]</span>🎨 Tạo 'Phim Bộ Hot' → dst=9872</span>
+<span class="log-line-ok"><span class="log-ts">[09:38:07]</span>✅ Phase 1 xong | Tạo: 10 | Match sẵn: 43 | Bỏ qua: 0</span>
+<span class="log-line-info"><span class="log-ts">[09:38:08]</span>📤 Phase 2: forward msg theo từng topic...</span>
+<span class="log-line-ok"><span class="log-ts">[09:38:10]</span>  [1/53] 📂 'Phim Lẻ 2024' (src=1234 → dst=9871)</span>
+<span class="log-line-ok"><span class="log-ts">[09:39:42]</span>     ✅ 2441 msg forward xong</span>
+<span class="log-line-ok"><span class="log-ts">[09:39:43]</span>  [2/53] 📂 'Phim Bộ Hot' (src=1235 → dst=9872)</span>
+<span class="log-line-ok"><span class="log-ts">[09:41:45]</span>  ➡️ [1100] batch×50 (id=88280→88329)</span>
+<span class="log-line-warn"><span class="log-ts">[09:41:46]</span>  ⏳ FloodWait 8s (attempt 1/4)</span>
+<span class="log-line-ok"><span class="log-ts">[09:41:55]</span>  ➡️ [1150] album×3 (id=88340→88342)</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── CAPTION EDITOR ── -->
+    <div id="page-caption" class="page">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">✏️ Caption Editor</div>
+          <div class="topbar-sub">Chỉnh sửa caption hàng loạt theo topic</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-success" onclick="startCaptionEdit()">▶️ Bắt đầu Edit</button>
+        </div>
+      </div>
+      <div style="padding:28px;">
+
+        <div class="grid-2 gap-12">
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">🔗 Phạm vi edit</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Link BẮT ĐẦU <span class="required">*</span></label>
+                <input class="form-control mono" placeholder="https://t.me/c/123456/1/100" id="cap-start-link" />
+                <div class="form-hint">Tool stream edit từ msg này trở về sau trong cùng topic</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Link KẾT THÚC <span class="hint">(tùy chọn)</span></label>
+                <input class="form-control mono" placeholder="Để trống = tới msg mới nhất" />
+              </div>
+
+              <hr class="divider" />
+              <div class="section-title">📝 Nguồn caption mới</div>
+
+              <div class="tab-bar">
+                <button class="tab-btn active" onclick="switchTab('cap-src','saved', this)">Saved Messages</button>
+                <button class="tab-btn" onclick="switchTab('cap-src','link', this)">Từ Link</button>
+                <button class="tab-btn" onclick="switchTab('cap-src','template', this)">Template</button>
+              </div>
+
+              <div id="tab-cap-src-saved" class="tab-content active">
+                <div class="alert alert-blue" style="margin-top:8px;">
+                  <span class="alert-icon">ℹ️</span>
+                  <div class="alert-content">Tool sẽ đọc 10 tin nhắn text mới nhất từ Saved Messages và cho bạn chọn.</div>
+                </div>
+              </div>
+
+              <div id="tab-cap-src-link" class="tab-content">
+                <div class="form-group mt-8">
+                  <label class="form-label">Link tin nhắn chứa caption</label>
+                  <input class="form-control mono" placeholder="https://t.me/c/123456/789" />
+                </div>
+              </div>
+
+              <div id="tab-cap-src-template" class="tab-content">
+                <div class="form-group mt-8">
+                  <label class="form-label">Caption mới (hỗ trợ Markdown)</label>
+                  <textarea class="form-control" id="cap-new-text" oninput="updateNewCapPreview()" style="min-height:120px;">{caption_goc}
+
+— Nhấp vào link này để xem: {bot_link}</textarea>
+                  <div class="form-hint">Giữ nguyên premium emoji entities khi edit</div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="card mt-16">
+              <div class="card-header">
+                <div class="card-title">⚙️ Tùy chọn</div>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Resume tự động</div>
+                  <div class="toggle-sub">Tiếp tục từ lần edit trước</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Giữ nguyên premium emoji</div>
+                  <div class="toggle-sub">Không mất custom_emoji entities</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="form-group mt-12">
+                <label class="form-label">Delay giữa mỗi edit (giây)</label>
+                <input class="form-control" type="number" value="1.2" step="0.1" min="0.5" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">👁️ Xem trước Caption</div>
+              </div>
+              <div class="preview-label">Caption gốc</div>
+              <div class="caption-preview mb-16" style="min-height:80px;color:var(--text3);">
+                <em>🎬 Phim Lẻ 2024 — Tập 01 Vietsub HD 1080p</em>
+              </div>
+              <div class="preview-label">Caption mới (sau edit)</div>
+              <div class="caption-preview" id="new-cap-preview">
+<span class="cap-italic">🎬 Phim Lẻ 2024 — Tập 01 Vietsub HD 1080p</span>
+
+<span class="cap-link">— Nhấp vào link này để xem: t.me/YourShareBot?start=alb_a1b2c3</span>
+              </div>
+            </div>
+
+            <div class="card mt-16">
+              <div class="card-header">
+                <div class="card-title">📊 Kết quả edit</div>
+              </div>
+              <div class="grid-2 gap-8">
+                <div style="background:var(--bg);border-radius:6px;padding:12px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:var(--green)">0</div>
+                  <div class="text-sm text-dim">✅ OK</div>
+                </div>
+                <div style="background:var(--bg);border-radius:6px;padding:12px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:var(--red)">0</div>
+                  <div class="text-sm text-dim">❌ Fail</div>
+                </div>
+                <div style="background:var(--bg);border-radius:6px;padding:12px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:var(--text2)">0</div>
+                  <div class="text-sm text-dim">⏭️ Skip</div>
+                </div>
+                <div style="background:var(--bg);border-radius:6px;padding:12px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:var(--text2)">0</div>
+                  <div class="text-sm text-dim">📋 Tổng</div>
+                </div>
+              </div>
+              <div class="log-box mt-16" style="min-height:120px;" id="cap-log">
+                <span class="text-dim">Chưa có log — nhấn "Bắt đầu Edit" để chạy</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── MEDIA MANAGER ── -->
+    <div id="page-media" class="page">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">🖼️ Media Manager</div>
+          <div class="topbar-sub">Quản lý file_id và album map</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm">📥 Import</button>
+          <button class="btn btn-ghost btn-sm">📤 Export</button>
+          <button class="btn btn-primary btn-sm" onclick="scanMedia()">🔍 Scan Media</button>
+        </div>
+      </div>
+      <div style="padding:28px;">
+
+        <div class="grid-4 mb-16">
+          <div class="stat-card blue">
+            <div class="stat-icon">🖼️</div>
+            <div class="stat-label">Tổng albums</div>
+            <div class="stat-value">2,891</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">📁</div>
+            <div class="stat-label">File IDs lưu</div>
+            <div class="stat-value">6,209</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-icon">🎬</div>
+            <div class="stat-label">Video thumbs</div>
+            <div class="stat-value">1,847</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">🔗</div>
+            <div class="stat-label">Bot tokens</div>
+            <div class="stat-value">2,891</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🗂️ Database Albums</div>
+            <div class="card-actions">
+              <input class="form-control" style="width:200px;" placeholder="Tìm token / msg_id..." />
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Token</th>
+                  <th>Msg ID (nguồn)</th>
+                  <th>Topic</th>
+                  <th>Loại</th>
+                  <th>Số file</th>
+                  <th>Lượt xem</th>
+                  <th>Trạng thái</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono text-blue">alb_a1b2c3</td>
+                  <td class="mono">88213</td>
+                  <td>Phim Lẻ 2024</td>
+                  <td><span class="badge badge-purple">Album ×4</span></td>
+                  <td>4 ảnh</td>
+                  <td class="text-green">247</td>
+                  <td><span class="badge badge-green">OK</span></td>
+                  <td><button class="btn btn-ghost btn-sm">Xem</button></td>
+                </tr>
+                <tr>
+                  <td class="mono text-blue">alb_d4e5f6</td>
+                  <td class="mono">88270</td>
+                  <td>Phim Lẻ 2024</td>
+                  <td><span class="badge badge-blue">Album ×2</span></td>
+                  <td>2 video thumbs</td>
+                  <td class="text-green">183</td>
+                  <td><span class="badge badge-green">OK</span></td>
+                  <td><button class="btn btn-ghost btn-sm">Xem</button></td>
+                </tr>
+                <tr>
+                  <td class="mono text-blue">alb_g7h8i9</td>
+                  <td class="mono">88340</td>
+                  <td>Phim Bộ Hot</td>
+                  <td><span class="badge badge-purple">Album ×3</span></td>
+                  <td>3 ảnh</td>
+                  <td class="text-green">91</td>
+                  <td><span class="badge badge-green">OK</span></td>
+                  <td><button class="btn btn-ghost btn-sm">Xem</button></td>
+                </tr>
+                <tr>
+                  <td class="mono text-blue">alb_j0k1l2</td>
+                  <td class="mono">88290</td>
+                  <td>Nhạc Remix</td>
+                  <td><span class="badge badge-gray">Single</span></td>
+                  <td>1 audio</td>
+                  <td class="text-green">34</td>
+                  <td><span class="badge badge-yellow">Hết hạn</span></td>
+                  <td><button class="btn btn-ghost btn-sm">Refresh</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card mt-16">
+          <div class="card-header">
+            <div class="card-title">🖼️ Thumbnail Preview (Album gần nhất)</div>
+          </div>
+          <div class="media-grid">
+            <div class="media-thumb">
+              <div class="media-thumb-icon">🖼️</div>
+              <div class="media-thumb-type">JPG</div>
+              <div class="media-thumb-count">1</div>
+            </div>
+            <div class="media-thumb">
+              <div class="media-thumb-icon">🖼️</div>
+              <div class="media-thumb-type">JPG</div>
+              <div class="media-thumb-count">2</div>
+            </div>
+            <div class="media-thumb">
+              <div class="media-thumb-icon">🎬</div>
+              <div class="media-thumb-type">VID</div>
+              <div class="media-thumb-count">3</div>
+            </div>
+            <div class="media-thumb">
+              <div class="media-thumb-icon">🖼️</div>
+              <div class="media-thumb-type">PNG</div>
+              <div class="media-thumb-count">4</div>
+            </div>
+            <div class="media-thumb">
+              <div class="media-thumb-icon">🎵</div>
+              <div class="media-thumb-type">MP3</div>
+              <div class="media-thumb-count">5</div>
+            </div>
+            <div class="media-thumb">
+              <div class="media-thumb-icon">🎬</div>
+              <div class="media-thumb-type">VID</div>
+              <div class="media-thumb-count">6</div>
+            </div>
+            <div class="media-thumb">
+              <div class="media-thumb-icon">🖼️</div>
+              <div class="media-thumb-type">JPG</div>
+              <div class="media-thumb-count">7</div>
+            </div>
+            <div class="media-thumb">
+              <div class="media-thumb-icon">🖼️</div>
+              <div class="media-thumb-type">JPG</div>
+              <div class="media-thumb-count">8</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── LOGS ── -->
+    <div id="page-logs" class="page">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">📜 System Logs</div>
+          <div class="topbar-sub">Log toàn bộ hoạt động</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="clearLog()">🗑️ Xóa</button>
+          <button class="btn btn-ghost btn-sm">📥 Tải .log</button>
+        </div>
+      </div>
+      <div style="padding:28px;">
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Bộ lọc</div>
+          </div>
+          <div class="flex gap-8 items-center" style="flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm">Tất cả</button>
+            <button class="btn btn-ghost btn-sm text-green">✅ OK</button>
+            <button class="btn btn-ghost btn-sm text-red">❌ Lỗi</button>
+            <button class="btn btn-ghost btn-sm text-yellow">⚠️ Cảnh báo</button>
+            <button class="btn btn-ghost btn-sm text-blue">ℹ️ Info</button>
+            <button class="btn btn-ghost btn-sm text-dim">⏭️ Skip</button>
+            <div class="ml-auto">
+              <input class="form-control" style="width:220px;" placeholder="🔍 Tìm trong log..." />
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-16">
+          <div class="log-box" style="max-height:600px; font-size:12.5px;">
+<span class="log-line-info"><span class="log-ts">[2026-06-26 09:38:00]</span>[SYSTEM] Tool khởi động — TG Clone Pro v1.0</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:38:01]</span>[USERBOT] Đã đăng nhập: @my_userbot · DC4 Singapore</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:38:01]</span>[BOT] Khởi động bot @YourShareBot · Polling mode</span>
+<span class="log-line-info"><span class="log-ts">[2026-06-26 09:38:02]</span>[CLONE] SOURCE: Forum_GocA (-100123456789)</span>
+<span class="log-line-info"><span class="log-ts">[2026-06-26 09:38:02]</span>[CLONE] DEST: Forum_MoiB (-100987654321)</span>
+<span class="log-line-info"><span class="log-ts">[2026-06-26 09:38:03]</span>[CLONE] Preload: src=53 topics | dst=43 topics</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:38:05]</span>[PHASE1] 🎨 Tạo 'Phim Lẻ 2024' → dst=9871</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:38:06]</span>[PHASE1] 🎨 Tạo 'Phim Bộ Hot' → dst=9872</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:38:07]</span>[PHASE1] ✅ Xong | Tạo: 10 | Match: 43 | Bỏ: 0</span>
+<span class="log-line-info"><span class="log-ts">[2026-06-26 09:38:08]</span>[PHASE2] Bắt đầu forward messages từng topic...</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:38:10]</span>[TOPIC] [1/53] 'Phim Lẻ 2024' (1234→9871)</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:38:15]</span>[CLONE] ➡️ batch×50 id=10001→10050</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:38:17]</span>[CLONE] ➡️ album×4 id=10051→10054</span>
+<span class="log-line-warn"><span class="log-ts">[2026-06-26 09:38:20]</span>[CLONE] ⏳ FloodWait 8s (attempt 1/4)</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:38:29]</span>[CLONE] ➡️ batch×50 id=10060→10109</span>
+<span class="log-line-skip"><span class="log-ts">[2026-06-26 09:38:31]</span>[CLONE] ⏭️ skip 2 service msg (topic action)</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:39:42]</span>[TOPIC] ✅ 'Phim Lẻ 2024' xong — 2441 msg</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:39:42]</span>[BOT] Lưu 2441 file_id → album map</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:39:43]</span>[CAPTION] Edit caption 2441 msg topic 'Phim Lẻ 2024'</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:39:43]</span>[TOPIC] [2/53] 'Phim Bộ Hot' (1235→9872)</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:41:45]</span>[BOT] User @viewer_01 → /start alb_a1b2c3 → gửi album×4</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:41:47]</span>[BOT] User @viewer_02 → /start alb_d4e5f6 → gửi album×2</span>
+<span class="log-line-err"><span class="log-ts">[2026-06-26 09:41:50]</span>[CLONE] ⚠️ id=88330: MessageIdInvalidError → skip</span>
+<span class="log-line-ok"><span class="log-ts">[2026-06-26 09:41:55]</span>[CLONE] ➡️ album×3 id=88340→88342</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div id="page-settings" class="page">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">⚙️ Cài đặt</div>
+          <div class="topbar-sub">Cấu hình hệ thống</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">💾 Lưu tất cả</button>
+        </div>
+      </div>
+      <div style="padding:28px;">
+
+        <div class="grid-2 gap-12">
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">🗄️ Database</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Loại Database</label>
+                <select class="form-control">
+                  <option selected>SQLite (khuyến nghị)</option>
+                  <option>JSON file</option>
+                  <option>PostgreSQL</option>
+                  <option>Redis</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Đường dẫn file</label>
+                <input class="form-control mono" value="./media_db.sqlite" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Backup tự động</label>
+                <select class="form-control">
+                  <option selected>Mỗi 6 giờ</option>
+                  <option>Mỗi 12 giờ</option>
+                  <option>Mỗi ngày</option>
+                  <option>Tắt</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card mt-16">
+              <div class="card-header">
+                <div class="card-title">⚡ Hiệu năng</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Batch size (userbot clone)</label>
+                <input class="form-control" type="number" value="50" min="1" max="100" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Max concurrent albums</label>
+                <input class="form-control" type="number" value="1" min="1" max="5" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Flood wait threshold (giây)</label>
+                <input class="form-control" type="number" value="60" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Max retry khi lỗi</label>
+                <input class="form-control" type="number" value="4" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">🔐 Bảo mật</div>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Mã hóa file session</div>
+                  <div class="toggle-sub">Encrypt .session bằng passphrase</div>
+                </div>
+                <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Ẩn token trong log</div>
+                  <div class="toggle-sub">Mask API key, bot token trong output</div>
+                </div>
+                <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Whitelist người dùng Bot</div>
+                  <div class="toggle-sub">Chỉ user trong danh sách dùng được</div>
+                </div>
+                <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="form-group mt-12">
+                <label class="form-label">Danh sách User ID được phép</label>
+                <textarea class="form-control mono" placeholder="123456789&#10;987654321&#10;..."></textarea>
+                <div class="form-hint">Một user ID mỗi dòng. Để trống = cho phép tất cả.</div>
+              </div>
+            </div>
+
+            <div class="card mt-16">
+              <div class="card-header">
+                <div class="card-title">📁 State Files</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">💾</div>
+                <div><div class="topic-name">State directory</div><div class="topic-meta">Clone progress files</div></div>
+                <div class="topic-count mono text-dim">./</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">💾</div>
+                <div><div class="topic-name">Caption progress dir</div><div class="topic-meta">Caption edit resume</div></div>
+                <div class="topic-count mono text-dim">./.tg_caption_progress/</div>
+              </div>
+              <div class="topic-row">
+                <div class="topic-icon">📊</div>
+                <div><div class="topic-name">State files hiện có</div></div>
+                <div class="topic-count text-blue">12 files</div>
+              </div>
+              <button class="btn btn-danger btn-sm mt-12">🗑️ Xóa tất cả state files</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-16">
+          <div class="card-header">
+            <div class="card-title">📦 Phụ thuộc & Cài đặt</div>
+          </div>
+          <div class="alert alert-green">
+            <span class="alert-icon">✅</span>
+            <div class="alert-content">
+              <div class="alert-title">Cài đặt nhanh</div>
+              <code style="font-size:12px;">pip install telethon python-telegram-bot aiohttp cryptg</code>
+            </div>
+          </div>
+          <div class="table-wrap mt-12">
+            <table>
+              <thead>
+                <tr><th>Package</th><th>Phiên bản</th><th>Mục đích</th><th>Trạng thái</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>telethon</code></td><td class="text-dim">≥ 1.34</td><td>Userbot API, clone, caption edit</td><td><span class="badge badge-green">Đã cài</span></td></tr>
+                <tr><td><code>python-telegram-bot</code></td><td class="text-dim">≥ 20.0</td><td>Bot phục vụ media cho user</td><td><span class="badge badge-green">Đã cài</span></td></tr>
+                <tr><td><code>aiohttp</code></td><td class="text-dim">≥ 3.9</td><td>Webhook notify</td><td><span class="badge badge-green">Đã cài</span></td></tr>
+                <tr><td><code>cryptg</code></td><td class="text-dim">optional</td><td>Tăng tốc upload/download</td><td><span class="badge badge-yellow">Tùy chọn</span></td></tr>
+                <tr><td><code>aiosqlite</code></td><td class="text-dim">≥ 0.19</td><td>Async SQLite database</td><td><span class="badge badge-green">Đã cài</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ── NAV ──
+  function showPage(name, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    const p = document.getElementById('page-' + name);
+    if (p) p.classList.add('active');
+    if (btn) btn.classList.add('active');
+    // Update topbar sub title via topbar inside each page's first child
+    const topbar = p && p.querySelector('.topbar');
+  }
+
+  // ── TABS ──
+  function switchTab(group, name, btn) {
+    document.querySelectorAll(`[id^="tab-${group}-"]`).forEach(t => t.classList.remove('active'));
+    const tab = document.getElementById(`tab-${group}-${name}`);
+    if (tab) tab.classList.add('active');
+    if (btn) {
+      btn.closest('.tab-bar').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  }
+
+  // ── TOGGLE PASSWORD ──
+  function togglePass(id) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+  }
+
+  // ── ICON MODE ──
+  function toggleIconMode() {
+    const v = document.getElementById('icon-mode').value;
+    document.getElementById('icon-emoji-group').style.display = v === 'fixed' ? 'block' : 'none';
+  }
+
+  // ── CAPTION PREVIEW ──
+  function updateCaptionPreview() {
+    const tmpl = document.getElementById('caption-template').value;
+    const box  = document.getElementById('caption-preview-box');
+    box.textContent = tmpl
+      .replace('{caption_goc}', '🎬 Phim Lẻ 2024 — Tập 01 Vietsub HD 1080p')
+      .replace('{bot_link}', 't.me/YourShareBot?start=alb_a1b2c3')
+      .replace('{topic_name}', 'Phim Lẻ 2024')
+      .replace('{msg_id}', '88213');
+  }
+
+  function updateNewCapPreview() {
+    const v = document.getElementById('cap-new-text').value;
+    const box = document.getElementById('new-cap-preview');
+    box.textContent = v
+      .replace('{caption_goc}', '🎬 Phim Lẻ 2024 — Tập 01 Vietsub HD 1080p')
+      .replace('{bot_link}', 't.me/YourShareBot?start=alb_a1b2c3');
+  }
+
+  // ── SIMULATE ACTIONS ──
+  function refreshStats() {
+    const els = ['stat-msgs','stat-topics','stat-media','stat-reqs'];
+    els.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.opacity = '0.4';
+      setTimeout(() => { el.style.opacity = '1'; }, 500);
+    });
+  }
+
+  function clearLog() { /* stub */ }
+
+  function testConnection(which) {
+    alert(`🔌 Đang kiểm tra kết nối ${which === 'bot' ? 'Bot' : 'Userbot'}...\n\n✅ Kết nối thành công!`);
+  }
+
+  function saveConfig(which) {
+    alert(`💾 Đã lưu cấu hình ${which === 'bot' ? 'Bot' : 'Userbot'}!`);
+  }
+
+  function saveAllSettings() {
+    alert('💾 Đã lưu tất cả cài đặt!');
+  }
+
+  function preloadTopics() {
+    alert('🔄 Đang preload topics từ Forum Nguồn...\n\nSrc: 53 topics ✅\nDst: 43 topics ✅');
+  }
+
+  function startClone() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang chạy...';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '▶️ Chạy Clone';
+    }, 3000);
+    appendLog('clone-log', 'info', '▶️ Người dùng yêu cầu bắt đầu clone...');
+  }
+
+  function stopClone() {
+    if (confirm('⏹️ Dừng tiến trình clone?\n\nProgress đã lưu — có thể resume sau.')) {
+      appendLog('clone-log', 'warn', '⏹️ Người dùng dừng clone — progress đã lưu');
+    }
+  }
+
+  function startCaptionEdit() {
+    const link = document.getElementById('cap-start-link').value.trim();
+    if (!link) { alert('⚠️ Vui lòng nhập link BẮT ĐẦU!'); return; }
+    appendLog('cap-log', 'info', `✏️ Bắt đầu edit caption từ: ${link}`);
+  }
+
+  function scanMedia() {
+    alert('🔍 Đang scan media từ Forum Nguồn...\n\n📊 Kết quả:\n• 6,209 file IDs tìm thấy\n• 2,891 albums\n• 1,847 video thumbnails\n\n✅ Database đã cập nhật!');
+  }
+
+  function appendLog(boxId, type, msg) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    const now = new Date().toLocaleTimeString('vi-VN');
+    const line = document.createElement('div');
+    const cls = { ok: 'log-line-ok', warn: 'log-line-warn', err: 'log-line-err', info: 'log-line-info', skip: 'log-line-skip' }[type] || '';
+    line.className = cls;
+    line.innerHTML = `<span class="log-ts">[${now}]</span>${msg}`;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // ── LIVE STATS SIMULATION ──
+  let tickerRunning = false;
+  function startLiveTicker() {
+    if (tickerRunning) return;
+    tickerRunning = true;
+    setInterval(() => {
+      const msgEl = document.getElementById('stat-msgs');
+      if (msgEl) {
+        const cur = parseInt(msgEl.textContent.replace(/,/g, ''));
+        msgEl.textContent = (cur + Math.floor(Math.random() * 3)).toLocaleString();
+      }
+    }, 4000);
+  }
+  startLiveTicker();
+</script>
+
+</body>
+</html>
