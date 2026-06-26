@@ -89,3 +89,31 @@ clonebot/
 - Bot phải được userbot **/start** trước khi harvest file_id
 - Video khi clone chỉ gửi **thumbnail** nếu bật `video_thumbnail_only`
 - Progress clone/caption lưu tự động — có thể resume sau khi dừng
+
+## Lỗi thường gặp (Windows)
+
+### `ImportError: CreateForumTopicRequest`
+
+Telethon trên máy quá cũ hoặc quá mới. Chạy:
+
+```cmd
+pip install --upgrade "telethon>=1.34.0,<2.0.0"
+```
+
+Sau đó tải lại bản ZIP mới nhất (đã có `shared/telethon_compat.py`) hoặc cập nhật file `userbot/clone_forum.py`.
+
+### Không có `config/settings.json`
+
+```cmd
+copy config\settings.example.json config\settings.json
+```
+
+### Chạy đúng lệnh
+
+```cmd
+cd C:\Users\Admin\Documents\clonebot-cursor-tg-forum-clone-dashboard-d38b
+pip install -r requirements.txt
+python run.py
+```
+
+(Không double-click `run.py` — mở CMD trong folder rồi gõ `python run.py`)

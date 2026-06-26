@@ -9,12 +9,13 @@ from typing import Any, Callable, Optional
 
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError
-from telethon.tl.functions.messages import (
+from telethon.tl.types import Channel, Message
+
+from shared.telethon_compat import (
     CreateForumTopicRequest,
     ForwardMessagesRequest,
     GetForumTopicsRequest,
 )
-from telethon.tl.types import Channel, Message
 
 from bot import media_db
 from shared.logger import log_buffer

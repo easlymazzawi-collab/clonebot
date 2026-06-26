@@ -16,6 +16,14 @@ from shared.config import load_settings
 
 
 def main():
+    try:
+        import telethon
+        ver = getattr(telethon, "__version__", "?")
+        print(f"   Telethon {ver}")
+    except ImportError:
+        print("   ⚠️  Chưa cài telethon — chạy: pip install -r requirements.txt")
+        sys.exit(1)
+
     cfg = load_settings()
     host = cfg.get("server", {}).get("host", "0.0.0.0")
     port = int(cfg.get("server", {}).get("port", 8080))
