@@ -24,6 +24,16 @@ def main():
         print("   ⚠️  Chưa cài telethon — chạy: pip install -r requirements.txt")
         sys.exit(1)
 
+    # Kiểm tra import forum API trước khi chạy server
+    try:
+        from shared.telethon_compat import CreateForumTopicRequest  # noqa: F401
+    except ImportError as e:
+        print("\n❌ Lỗi Telethon — thiếu file fix hoặc bản Telethon quá cũ.")
+        print("   Cách 1 (nhanh): pip install --upgrade telethon==1.44.0")
+        print("   Cách 2: tải lại ZIP mới từ GitHub (có shared/telethon_compat.py)")
+        print(f"   Chi tiết: {e}\n")
+        sys.exit(1)
+
     cfg = load_settings()
     host = cfg.get("server", {}).get("host", "0.0.0.0")
     port = int(cfg.get("server", {}).get("port", 8080))
