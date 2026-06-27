@@ -1,0 +1,23 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Runtime / state files
+*.session
+*.session-journal
+*.db
+*.db-wal
+*.db-shm
+cloner_state_*.txt
+cloner_topicmap_*.txt
+cloner_meta_*.json
+
+# Secrets
+.env
+
+# Thumbnails downloaded temporarily
+*.jpg
+*.jpeg
+*.png
+*.mp4
