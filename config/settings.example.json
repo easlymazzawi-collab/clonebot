@@ -8,9 +8,7 @@
   "bot": {
     "token": "",
     "username": "YourShareBot",
-    "caption_template": "{caption_goc}\n\n— Nhấp vào link này để xem: {bot_link}",
     "start_message": "🎬 Đang tải media cho bạn...\nVui lòng chờ trong giây lát.",
-    "hide_sender": true,
     "keep_album": true,
     "keep_caption": true,
     "track_views": true
@@ -21,20 +19,15 @@
     "hide_sender": true,
     "video_thumbnail_only": true,
     "batch_size": 50,
-    "delay_between_edits": 1.2,
     "only_filter": "all",
     "icon_mode": "clone",
-    "skip_general": false,
-    "auto_create_topics": true,
-    "embed_bot_links": true
+    "skip_general": false
   },
-  "forum": {
-    "src_raw": "",
-    "dst_raw": ""
+  "caption": {
+    "delay": 1.2
   },
   "server": {
     "host": "0.0.0.0",
     "port": 8080
-  },
-  "webhook_url": ""
+  }
 }

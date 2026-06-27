@@ -9,7 +9,7 @@ from typing import Any, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from bot import bot_main, media_db
 from shared.config import ROOT, env_override, load_settings, save_settings
@@ -113,7 +113,7 @@ async def api_stats():
         "media_files": db_stats.get("total_files", 0),
         "albums": db_stats.get("total_albums", 0),
         "bot_views": db_stats.get("total_views", 0),
-        "bot_requests": db_stats.get("total_views", 0),
+        "bot_requests": db_stats.get("total_albums", 0),
     }
 
 

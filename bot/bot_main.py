@@ -18,6 +18,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 _app: Optional[Application] = None
 _bot_task: Optional[asyncio.Task] = None
 _pending_harvest: Optional[str] = None
+_harvest_group_id: Optional[str] = None
 
 
 def _build_media_group(file_ids: list[str], caption: str = ""):
@@ -63,6 +64,11 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     file_ids = album["file_ids"]
     caption = album["caption"] if cfg.get("keep_caption", True) else ""
 
+    if not file_ids:
+        await update.message.reply_text("⏳ Media đang được xử lý, vui lòng thử lại sau ít phút.")
+        log_buffer.warn("BOT", f"Token {token} chưa có file_id")
+        return
+
     try:
         if cfg.get("keep_album", True) and len(file_ids) > 1:
             media = _build_media_group(file_ids, caption)
@@ -88,30 +94,21 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 async def harvest_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Capture file_ids when userbot forwards media for harvesting."""
-    global _pending_harvest
+    global _pending_harvest, _harvest_group_id
     if not update.message:
         return
 
     text = update.message.text or update.message.caption or ""
     if text.startswith("HARVEST:"):
         _pending_harvest = text.split(":", 1)[1].strip()
+        _harvest_group_id = None
         return
 
     if not update.message.media and not update.message.media_group_id:
         return
 
-    file_ids: list[str] = []
-    if update.message.media_group_id:
-        # Media group: collect from this message; full group may arrive as separate updates
-        fid = _extract_file_id(update.message)
-        if fid:
-            file_ids.append(fid)
-    else:
-        fid = _extract_file_id(update.message)
-        if fid:
-            file_ids = [fid]
-
-    if not file_ids:
+    fid = _extract_file_id(update.message)
+    if not fid:
         return
 
     token = _pending_harvest
@@ -121,10 +118,19 @@ async def harvest_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     album = media_db.get_album(token)
     if album:
         existing = album.get("file_ids") or []
-        merged = existing + [f for f in file_ids if f not in existing]
-        media_db.update_file_ids(token, merged)
-        log_buffer.ok("BOT", f"Harvest {token}: +{len(file_ids)} file_id (total {len(merged)})")
-    _pending_harvest = None
+        if fid not in existing:
+            merged = existing + [fid]
+            media_db.update_file_ids(token, merged)
+            log_buffer.ok("BOT", f"Harvest {token}: +1 file_id (total {len(merged)})")
+
+    # Only clear the pending token when NOT part of an ongoing media group
+    group_id = update.message.media_group_id
+    if group_id:
+        _harvest_group_id = group_id
+    else:
+        # Single media message — harvest complete
+        _pending_harvest = None
+        _harvest_group_id = None
 
 
 def _extract_file_id(message) -> Optional[str]:
@@ -181,6 +187,13 @@ async def start_bot() -> bool:
     await _app.initialize()
     await _app.start()
     await _app.updater.start_polling(drop_pending_updates=True)
+
+    # Keep a sentinel task so is_running() returns True while polling is active
+    async def _sentinel():
+        while _app and _app.updater and _app.updater.running:
+            await asyncio.sleep(5)
+
+    _bot_task = asyncio.create_task(_sentinel())
     log_buffer.ok("BOT", f"Bot polling started (@{cfg.get('bot', {}).get('username', '?')})")
     return True
 

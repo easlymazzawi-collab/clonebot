@@ -304,7 +304,7 @@ async def forward_topic_messages(
     pending_album: dict = {"gid": None, "msgs": []}
 
     async def flush_batch():
-        nonlocal count, last_buf
+        nonlocal count, skipped, last_buf
         if not batch:
             return
         n = len(batch)
