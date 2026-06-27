@@ -51,8 +51,9 @@ def msg_in_topic(msg, topic_id: Optional[int]) -> bool:
     if msg.id == topic_id:
         return True
     rt = getattr(msg, "reply_to", None)
+    # General topic (id=1): messages have no reply_to
     if rt is None:
-        return False
+        return topic_id == 1
     top = getattr(rt, "reply_to_top_id", None)
     if top == topic_id:
         return True

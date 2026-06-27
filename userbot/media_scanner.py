@@ -109,13 +109,15 @@ async def scan_topic_media(
         await asyncio.sleep(1.5)
 
     kwargs: dict = {"entity": src_entity, "min_id": min_id, "reverse": True}
-    if src_topic_id != 1:
+    # For non-General topics, use reply_to filter to narrow results server-side
+    if src_topic_id and src_topic_id != 1:
         kwargs["reply_to"] = src_topic_id
 
     async for msg in client.iter_messages(**kwargs):
         if not isinstance(msg, Message) or not msg.media:
             continue
-        if not msg_in_topic(msg, src_topic_id if src_topic_id != 1 else None):
+        # Always pass the actual topic_id so General (id=1) is filtered correctly
+        if not msg_in_topic(msg, src_topic_id):
             continue
         stats["scanned"] += 1
 

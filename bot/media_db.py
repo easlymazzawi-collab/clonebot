@@ -72,29 +72,42 @@ def save_album(
 ) -> str:
     token = token or new_token()
     with _connect() as conn:
-        conn.execute(
-            """
-            INSERT OR REPLACE INTO albums
-            (token, src_chat_id, src_msg_id, dst_msg_id, topic_name,
-             media_type, file_ids, caption, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                token,
-                src_chat_id,
-                src_msg_id,
-                dst_msg_id,
-                topic_name,
-                media_type,
-                json.dumps(file_ids),
-                caption,
-                datetime.now().isoformat(timespec="seconds"),
-            ),
-        )
-        conn.execute(
-            "INSERT OR IGNORE INTO stats(key, value) VALUES('total_albums', 0)"
-        )
-        conn.execute("UPDATE stats SET value = value + 1 WHERE key='total_albums'")
+        existing = conn.execute(
+            "SELECT view_count, status FROM albums WHERE token=?", (token,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                """
+                UPDATE albums SET src_chat_id=?, src_msg_id=?, dst_msg_id=?,
+                    topic_name=?, media_type=?, file_ids=?, caption=?
+                WHERE token=?
+                """,
+                (
+                    src_chat_id, src_msg_id, dst_msg_id,
+                    topic_name, media_type, json.dumps(file_ids), caption,
+                    token,
+                ),
+            )
+        else:
+            conn.execute(
+                """
+                INSERT INTO albums
+                (token, src_chat_id, src_msg_id, dst_msg_id, topic_name,
+                 media_type, file_ids, caption, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    token,
+                    src_chat_id,
+                    src_msg_id,
+                    dst_msg_id,
+                    topic_name,
+                    media_type,
+                    json.dumps(file_ids),
+                    caption,
+                    datetime.now().isoformat(timespec="seconds"),
+                ),
+            )
     return token
 
 
@@ -123,10 +136,6 @@ def increment_views(token: str) -> None:
         conn.execute(
             "UPDATE albums SET view_count = view_count + 1 WHERE token=?", (token,)
         )
-        conn.execute(
-            "INSERT OR IGNORE INTO stats(key, value) VALUES('total_views', 0)"
-        )
-        conn.execute("UPDATE stats SET value = value + 1 WHERE key='total_views'")
 
 
 def list_albums(limit: int = 100, search: str = "") -> list[dict[str, Any]]:
@@ -162,15 +171,16 @@ def list_albums(limit: int = 100, search: str = "") -> list[dict[str, Any]]:
 
 def get_stats() -> dict[str, int]:
     with _connect() as conn:
-        rows = conn.execute("SELECT key, value FROM stats").fetchall()
         total_albums = conn.execute("SELECT COUNT(*) AS c FROM albums").fetchone()["c"]
-        rows = conn.execute("SELECT file_ids FROM albums").fetchall()
-        total_files = sum(len(json.loads(r["file_ids"])) for r in rows)
+        file_id_rows = conn.execute("SELECT file_ids FROM albums").fetchall()
+        total_files = sum(
+            len(json.loads(r["file_ids"])) for r in file_id_rows
+        )
         total_views = conn.execute(
             "SELECT COALESCE(SUM(view_count), 0) AS c FROM albums"
         ).fetchone()["c"]
-    stats = {r["key"]: r["value"] for r in rows}
-    stats["total_albums"] = total_albums
-    stats["total_files"] = total_files
-    stats["total_views"] = total_views
-    return stats
+    return {
+        "total_albums": total_albums,
+        "total_files": total_files,
+        "total_views": total_views,
+    }
